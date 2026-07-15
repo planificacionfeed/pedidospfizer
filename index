@@ -104,9 +104,6 @@
     table.ptable tr:hover td { background: var(--cream); }
     table.ptable td.code { font-family: 'Courier New', monospace; font-size: 0.75rem; color: var(--ink-soft); }
     table.ptable td:last-child { text-align: center; }
-    .p-conservacion { display: block; font-size: 0.74rem; color: var(--ink-soft); font-weight: 400; margin-top: 3px; }
-    .p-conservacion.frio      { color: #2E6B8B; }
-    .p-conservacion.congelado { color: #5B4B8B; }
 
     /* ── CATEGORY CHIPS ── */
     .cat-chip {
@@ -561,9 +558,12 @@ function startOrder(sede) {
   document.getElementById('order-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
-// Menú vigente esta semana (ya viene filtrado por "Activo" desde el Sheet)
-function getActiveProducts() {
-  return PRODUCTS;
+// Menú vigente ese día (ya viene filtrado por "Activo" desde el Sheet).
+// dow: índice de día de semana (0=Domingo..6=Sábado), igual que Date.getDay().
+// Si un producto no tiene días asignados en el Sheet, se ofrece todos los días.
+function getActiveProducts(dow) {
+  const diaNombre = DAY_NAMES[dow];
+  return PRODUCTS.filter(p => !p.dias || p.dias.length === 0 || p.dias.includes(diaNombre));
 }
 
 // ════════════════════════════════════════════════
@@ -572,7 +572,6 @@ function getActiveProducts() {
 function buildDayUI() {
   const monday      = window._weekMonday;
   const allowedDows = SEDE_DAYS[currentSede];
-  const activeProds = getActiveProducts();
 
   for (let i = 0; i < 7; i++) {
     const d = new Date(monday);
@@ -580,7 +579,7 @@ function buildDayUI() {
     if (allowedDows.includes(d.getDay())) {
       deliveryDates.push(d);
       orderData[isoDate(d)] = {};
-      activeProds.forEach(p => { orderData[isoDate(d)][p.code] = 0; });
+      getActiveProducts(d.getDay()).forEach(p => { orderData[isoDate(d)][p.code] = 0; });
     }
   }
 
@@ -592,6 +591,7 @@ function buildDayUI() {
   deliveryDates.forEach((d, idx) => {
     const iso = isoDate(d);
     const dow = d.getDay();
+    const activeProds = getActiveProducts(dow);
 
     const tab = document.createElement('button');
     tab.className = 'day-tab' + (idx === 0 ? ' active' : '');
@@ -604,14 +604,13 @@ function buildDayUI() {
     panel.className = 'day-panel' + (idx === 0 ? ' active' : '');
     panel.id = 'panel-' + iso;
 
-    const rows = activeProds.map(p => `
+    const rows = activeProds.length ? activeProds.map(p => `
       <tr>
         <td class="code">
           <span class="cat-chip cat-${p.categoria}">${p.code}</span>
         </td>
         <td>
           ${p.name}
-          <span class="p-conservacion ${p.conservacion && p.conservacion.toLowerCase().includes('congel') ? 'congelado' : 'frio'}">${p.conservacion || ''}</span>
         </td>
         <td>
           <div class="qty-wrap">
@@ -623,7 +622,7 @@ function buildDayUI() {
             <button class="qty-btn" onclick="changeQty('${iso}','${p.code}',1)">+</button>
           </div>
         </td>
-      </tr>`).join('');
+      </tr>`).join('') : `<tr><td colspan="3" style="color:var(--ink-soft); font-style:italic; padding:22px 12px;">No hay menú cargado para este día todavía.</td></tr>`;
 
     panel.innerHTML = `
       <div class="day-header">
@@ -688,16 +687,16 @@ function updateSummary() {
   const grid = document.getElementById('summary-grid');
   if (!grid) return;
   grid.innerHTML = '';
-  const activeProds = getActiveProducts();
   deliveryDates.forEach(d => {
     const iso = isoDate(d);
     const dow = d.getDay();
+    const prodsDelDia = getActiveProducts(dow);
     const has = Object.values(orderData[iso] || {}).some(q => q > 0);
     const div = document.createElement('div');
     div.className = 's-day';
     let html = '<div class="s-day-name">' + DAY_SHORT[dow] + ' ' + d.getDate() + '</div>';
     if (!has) { html += '<div class="s-empty">Sin pedido</div>'; }
-    else { activeProds.forEach(p => { if ((orderData[iso] || {})[p.code] > 0) html += '<div class="s-item">× ' + orderData[iso][p.code] + ' ' + p.name + '</div>'; }); }
+    else { prodsDelDia.forEach(p => { if ((orderData[iso] || {})[p.code] > 0) html += '<div class="s-item">× ' + orderData[iso][p.code] + ' ' + p.name + '</div>'; }); }
     div.innerHTML = html;
     grid.appendChild(div);
   });
@@ -725,7 +724,7 @@ async function submitOrder() {
     dias: deliveryDates.map(d => ({
       fecha: isoDate(d),
       dia: DAY_NAMES[d.getDay()],
-      productos: getActiveProducts()
+      productos: getActiveProducts(d.getDay())
         .map(p => ({ codigo: p.code, nombre: p.name, cantidad: (orderData[isoDate(d)] || {})[p.code] || 0 }))
         .filter(p => p.cantidad > 0),
     })).filter(d => d.productos.length > 0),
@@ -750,7 +749,7 @@ function onOrderSuccess() {
     fecha: fechaHoy,
     dias: deliveryDates.map(d => ({
       fecha: isoDate(d), dia: DAY_NAMES[d.getDay()],
-      productos: getActiveProducts().map(p => ({ codigo: p.code, nombre: p.name, cantidad: (orderData[isoDate(d)] || {})[p.code] || 0 })).filter(p => p.cantidad > 0),
+      productos: getActiveProducts(d.getDay()).map(p => ({ codigo: p.code, nombre: p.name, cantidad: (orderData[isoDate(d)] || {})[p.code] || 0 })).filter(p => p.cantidad > 0),
     })).filter(d => d.productos.length > 0),
   };
   document.getElementById('success-title').textContent = isEditing ? '¡Pedido actualizado!' : '¡Pedido confirmado!';
