@@ -29,6 +29,8 @@
     /* HEADER */
     header { background: var(--white); border-bottom: 1.5px solid var(--line); padding: 0 40px; height: 72px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 200; }
     .header-tag { font-size: 0.68rem; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; color: var(--accent2); }
+    .btn-logout { background: transparent; border: 1.5px solid var(--line); color: var(--ink-soft); padding: 7px 16px; border-radius: 6px; font-size: 0.72rem; font-weight: 700; font-family: 'Lato', sans-serif; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; transition: all .15s; white-space: nowrap; }
+    .btn-logout:hover { background: var(--ink); border-color: var(--ink); color: var(--white); }
 
     /* HERO */
     .hero { background: var(--ink); color: var(--white); padding: 52px 40px 44px; position: relative; overflow: hidden; }
@@ -243,7 +245,10 @@
     <text x="318" y="20" font-family="Arial, sans-serif" font-size="18" fill="#1D1D1B">®</text>
     <text x="2" y="100" font-family="Arial, sans-serif" font-size="11" font-weight="700" fill="#1D1D1B" letter-spacing="2.5">HAPPINESS IS HOMEMADE</text>
   </svg>
-  <div class="header-tag">Portal de pedidos · Pfizer</div>
+  <div style="display:flex; align-items:center; gap:18px;">
+    <div class="header-tag">Portal de pedidos · Pfizer</div>
+    <button class="btn-logout" onclick="logout()">Cerrar sesión</button>
+  </div>
 </header>
 
 <div class="hero">
@@ -332,7 +337,7 @@
 // ════════════════════════════════════════════════
 // CONFIGURACIÓN
 // ════════════════════════════════════════════════
-const APPS_SCRIPT_URL = 'PEGAR_ACA_LA_URL_DEL_APPS_SCRIPT_DE_PFIZER';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwM8XhfIXrae5YWz8pf5aKhWl19KX9gkenZCthb4e1AYM-2Ssjq24VAILV3VcRLILRc/exec';
 
 // El catálogo YA NO es fijo: se carga desde el Sheet "Catalogo" vía Apps Script.
 // Arranca vacío y se llena en cargarCatalogo().
@@ -343,22 +348,13 @@ const SEDE_LABELS = { colega: 'Pfizer Colega', contractor: 'Pfizer Contractor' }
 const DAY_NAMES = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 const DAY_SHORT = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
 
-// ── USUARIOS ──
-// Generados con: SHA256(usuario + ':' + clave + ':' + SALT)
-const USUARIOS_HASH = {
-  'pfizercolega':      '8c699e673713cc47f8d7f1ebf2670c61235482512eb6379da3f742b89c61d80e',
-  'pfizercontractor':  '030ba166aa3ed40808cff684fcab7b63ad7d56abfd68cbce808c53073df9ab84',
-};
-const SALT = 'feed_salt_2025';
-
 // ── SEDES PERMITIDAS POR USUARIO ──
-const USUARIO_SEDES = {
-  'pfizercolega':     ['colega'],
-  'pfizercontractor': ['contractor'],
-};
-
+// Ya no se define acá: la valida el Apps Script contra la hoja "Usuarios" al hacer login,
+// y queda guardada en sessionStorage como 'feed_sede' ('colega' | 'contractor' | 'todas').
 function getSedesPermitidas() {
-  return USUARIO_SEDES[sessionUsuario] || ['colega', 'contractor'];
+  const sede = sessionStorage.getItem('feed_sede');
+  if (sede === 'todas') return ['colega', 'contractor'];
+  return sede ? [sede] : [];
 }
 
 // ── ESTADO ──
@@ -366,8 +362,8 @@ let currentSede   = null;
 let orderData     = {};
 let deliveryDates = [];
 let isEditing     = false;
-let sessionUsuario   = sessionStorage.getItem('feed_usuario') || null;
-let sessionHashClave = sessionStorage.getItem('feed_hash')    || null;
+let sessionUsuario = sessionStorage.getItem('feed_usuario') || null;
+let sessionSede     = sessionStorage.getItem('feed_sede')    || null;
 
 // ════════════════════════════════════════════════
 // LOGIN
@@ -376,32 +372,45 @@ async function doLogin() {
   const usuario = document.getElementById('input-usuario').value.trim();
   const clave   = document.getElementById('input-clave').value;
   const errEl   = document.getElementById('login-error');
+  const btn     = document.getElementById('btn-login');
 
   if (!usuario || !clave) { errEl.textContent = 'Completá usuario y contraseña.'; errEl.style.display = 'block'; return; }
   errEl.style.display = 'none';
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Ingresando…';
 
-  const encoder = new TextEncoder();
-  const data    = encoder.encode(usuario + ':' + clave + ':' + SALT);
-  const hashBuf = await crypto.subtle.digest('SHA-256', data);
-  const hashHex = Array.from(new Uint8Array(hashBuf)).map(b => b.toString(16).padStart(2,'0')).join('');
+  try {
+    const url = APPS_SCRIPT_URL
+      + '?action=login'
+      + '&usuario=' + encodeURIComponent(usuario)
+      + '&clave='   + encodeURIComponent(clave);
+    const res  = await fetch(url);
+    const json = await res.json();
 
-  if (USUARIOS_HASH[usuario] && USUARIOS_HASH[usuario] === hashHex) {
-    sessionUsuario   = usuario;
-    sessionHashClave = hashHex;
-    sessionStorage.setItem('feed_usuario', usuario);
-    sessionStorage.setItem('feed_hash',    hashHex);
-    showApp();
-  } else {
-    errEl.textContent = 'Usuario o contraseña incorrectos.';
+    if (json.status === 'ok') {
+      sessionUsuario = usuario;
+      sessionSede    = json.sede;
+      sessionStorage.setItem('feed_usuario', usuario);
+      sessionStorage.setItem('feed_sede',    json.sede);
+      showApp();
+    } else {
+      errEl.textContent = json.mensaje || 'Usuario o contraseña incorrectos.';
+      errEl.style.display = 'block';
+    }
+  } catch (e) {
+    errEl.textContent = 'Error de conexión. Intentá nuevamente.';
     errEl.style.display = 'block';
   }
+
+  btn.disabled = false;
+  btn.textContent = 'Ingresar';
 }
 
 document.addEventListener('DOMContentLoaded', () => {
   ['input-usuario','input-clave'].forEach(id => {
     document.getElementById(id).addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
   });
-  if (sessionUsuario && sessionHashClave && USUARIOS_HASH[sessionUsuario] === sessionHashClave) {
+  if (sessionUsuario && sessionSede) {
     showApp();
   }
 });
@@ -768,6 +777,30 @@ function backToHome() {
 
 function showError(msg) { const el = document.getElementById('error-msg'); el.textContent = msg; el.style.display = 'block'; }
 function hideError()    { document.getElementById('error-msg').style.display = 'none'; }
+
+// ════════════════════════════════════════════════
+// CERRAR SESIÓN
+// ════════════════════════════════════════════════
+function logout() {
+  sessionStorage.removeItem('feed_usuario');
+  sessionStorage.removeItem('feed_sede');
+  sessionUsuario = null;
+  sessionSede    = null;
+
+  // Reset de estado en memoria
+  currentSede = null; orderData = {}; deliveryDates = []; isEditing = false;
+  pedidosServidor = { colega: null, contractor: null };
+  PRODUCTS = [];
+
+  document.getElementById('main-app').style.display       = 'none';
+  document.getElementById('success-screen').style.display = 'none';
+  document.getElementById('order-section').style.display  = 'none';
+  document.getElementById('app-container').style.display  = 'block';
+  document.getElementById('login-screen').style.display    = 'flex';
+  document.getElementById('input-usuario').value = '';
+  document.getElementById('input-clave').value   = '';
+  hideError();
+}
 
 init();
 </script>
