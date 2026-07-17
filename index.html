@@ -4,16 +4,18 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>FEED — Pedido Semanal Pfizer</title>
-  <link href="https://fonts.googleapis.com/css2?family=Suez+One&family=Lato:wght@300;400;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <style>
     :root {
-      --ink:      #1D1D1B;
-      --ink-soft: #4A4845;
-      --cream:    #F7F4EE;
-      --cream-dk: #EDEAE2;
+      --ink:      #1F1F1F;  /* Negro Pleno — Pantone Neutral Black C */
+      --ink-soft: #6B6862;
+      --cream:    #F6F6EA;  /* Beige institucional — Pantone 7527 C */
+      --cream-dk: #ECEBDA;
       --white:    #FFFFFF;
-      --line:     #D8D4CB;
-      --accent2:  #7C6F5B;
+      --line:     #DEDCC9;
+      --amarillo: #FFC44E;  /* Amarillo institucional — Pantone 1225 C */
+      --kitchen:  #7075F1;  /* Violeta FEED Kitchen — Pantone 2725 C (catering corporativo) */
+      --accent2:  #7075F1;
       --ok:       #2E6B4A;
       --ok-bg:    #EAF4EE;
       --ok-br:    #9ECDB5;
@@ -24,40 +26,40 @@
     }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html { scroll-behavior: smooth; }
-    body { font-family: 'Lato', sans-serif; background: var(--cream); color: var(--ink); min-height: 100vh; display: flex; flex-direction: column; }
+    body { font-family: 'Archivo', sans-serif; background: var(--cream); color: var(--ink); min-height: 100vh; display: flex; flex-direction: column; }
 
     /* HEADER */
     header { background: var(--white); border-bottom: 1.5px solid var(--line); padding: 0 40px; height: 72px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 200; }
-    .header-tag { font-size: 0.68rem; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; color: var(--accent2); }
-    .btn-logout { background: transparent; border: 1.5px solid var(--line); color: var(--ink-soft); padding: 7px 16px; border-radius: 6px; font-size: 0.72rem; font-weight: 700; font-family: 'Lato', sans-serif; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; transition: all .15s; white-space: nowrap; }
+    .header-tag { font-family: 'DM Mono', monospace; font-size: 0.7rem; font-weight: 500; letter-spacing: 2px; text-transform: uppercase; color: var(--kitchen); }
+    .btn-logout { background: transparent; border: 1.5px solid var(--line); color: var(--ink-soft); padding: 7px 16px; border-radius: 6px; font-size: 0.72rem; font-weight: 700; font-family: 'Archivo', sans-serif; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; transition: all .15s; white-space: nowrap; }
     .btn-logout:hover { background: var(--ink); border-color: var(--ink); color: var(--white); }
 
     /* HERO */
     .hero { background: var(--ink); color: var(--white); padding: 52px 40px 44px; position: relative; overflow: hidden; }
     .hero::before { content: ''; position: absolute; inset: 0; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E"); opacity: 0.4; pointer-events: none; }
     .hero-inner { position: relative; max-width: 860px; margin: 0 auto; }
-    .hero-eyebrow { font-size: 0.7rem; font-weight: 700; letter-spacing: 3.5px; text-transform: uppercase; color: rgba(255,255,255,0.4); margin-bottom: 12px; }
-    .hero h1 { font-family: 'Suez One', serif; font-size: clamp(2rem, 5vw, 3.4rem); line-height: 1.05; margin-bottom: 12px; }
+    .hero-eyebrow { font-family: 'DM Mono', monospace; font-size: 0.72rem; font-weight: 500; letter-spacing: 2.5px; text-transform: uppercase; color: var(--amarillo); margin-bottom: 14px; }
+    .hero h1 { font-family: 'Archivo', sans-serif; font-weight: 800; letter-spacing: -0.5px; font-size: clamp(2rem, 5vw, 3.4rem); line-height: 1.03; margin-bottom: 12px; }
     .hero p { font-size: 0.93rem; color: rgba(255,255,255,0.58); max-width: 400px; line-height: 1.65; }
-    .week-pill { display: inline-flex; align-items: center; gap: 8px; margin-top: 20px; background: rgba(255,255,255,0.09); border: 1px solid rgba(255,255,255,0.16); border-radius: 4px; padding: 7px 16px; font-size: 0.81rem; font-weight: 700; letter-spacing: 0.5px; color: rgba(255,255,255,0.82); }
-    .week-pill::before { content: ''; display: inline-block; width: 7px; height: 7px; background: #C8A84B; border-radius: 50%; }
+    .week-pill { display: inline-flex; align-items: center; gap: 8px; margin-top: 20px; background: rgba(255,255,255,0.09); border: 1px solid rgba(255,255,255,0.16); border-radius: 4px; padding: 7px 16px; font-family: 'DM Mono', monospace; font-size: 0.78rem; font-weight: 500; letter-spacing: 0.5px; color: rgba(255,255,255,0.82); }
+    .week-pill::before { content: ''; display: inline-block; width: 7px; height: 7px; background: var(--kitchen); border-radius: 50%; }
 
     /* CONTAINER */
     .container { max-width: 860px; margin: 0 auto; padding: 36px 20px 100px; flex: 1; }
 
     /* CARD */
     .card { background: var(--white); border: 1.5px solid var(--line); border-radius: var(--radius); padding: 32px 36px; margin-bottom: 24px; }
-    .card-label { font-size: 0.67rem; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; color: var(--accent2); margin-bottom: 6px; }
-    .card h2 { font-family: 'Suez One', serif; font-size: 1.4rem; color: var(--ink); margin-bottom: 22px; line-height: 1.2; }
+    .card-label { font-family: 'DM Mono', monospace; font-size: 0.68rem; font-weight: 500; letter-spacing: 2px; text-transform: uppercase; color: var(--kitchen); margin-bottom: 6px; }
+    .card h2 { font-family: 'Archivo', sans-serif; font-weight: 800; letter-spacing: -0.3px; font-size: 1.4rem; color: var(--ink); margin-bottom: 22px; line-height: 1.2; }
 
     /* SEDE SELECTOR */
     .sede-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
     .sede-grid.single-sede { grid-template-columns: 1fr; max-width: 380px; }
     .sede-card { border: 1.5px solid var(--line); border-radius: var(--radius); padding: 22px 24px; cursor: pointer; transition: border-color .18s, background .18s; background: var(--cream); position: relative; display: block; }
-    .sede-card:hover { border-color: var(--accent2); background: var(--cream-dk); }
+    .sede-card:hover { border-color: var(--kitchen); background: var(--cream-dk); }
     .sede-card.has-pedido { border-color: var(--ok-br); background: var(--ok-bg); }
     .sede-card.has-pedido:hover { border-color: var(--ok); background: #DDF0E8; }
-    .sede-card .sede-name { font-family: 'Suez One', serif; font-size: 1.15rem; margin-bottom: 5px; }
+    .sede-card .sede-name { font-family: 'Archivo', sans-serif; font-weight: 800; letter-spacing: -0.2px; font-size: 1.15rem; margin-bottom: 5px; }
     .sede-card .sede-days { font-size: 0.77rem; color: var(--ink-soft); }
     .pedido-chip { display: none; align-items: center; gap: 6px; margin-top: 10px; background: var(--ok-bg); border: 1px solid var(--ok-br); color: var(--ok); font-size: 0.72rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; padding: 4px 10px; border-radius: 4px; width: fit-content; }
     .sede-card.has-pedido .pedido-chip { display: flex; }
@@ -81,9 +83,9 @@
 
     /* DAY TABS */
     .day-tabs { display: flex; flex-wrap: wrap; border-bottom: 1.5px solid var(--line); margin-bottom: 22px; }
-    .day-tab { padding: 9px 18px 12px; border: none; border-bottom: 3px solid transparent; background: transparent; font-size: 0.83rem; font-weight: 700; font-family: 'Lato', sans-serif; cursor: pointer; transition: all .15s; color: var(--ink-soft); margin-bottom: -1.5px; white-space: nowrap; }
+    .day-tab { padding: 9px 18px 12px; border: none; border-bottom: 3px solid transparent; background: transparent; font-size: 0.83rem; font-weight: 700; font-family: 'Archivo', sans-serif; cursor: pointer; transition: all .15s; color: var(--ink-soft); margin-bottom: -1.5px; white-space: nowrap; }
     .day-tab:hover { color: var(--ink); }
-    .day-tab.active { color: var(--ink); border-bottom-color: var(--ink); }
+    .day-tab.active { color: var(--ink); border-bottom-color: var(--kitchen); }
     .day-tab .dot { display: inline-block; width: 6px; height: 6px; background: var(--warn-br); border-radius: 50%; margin-left: 5px; vertical-align: middle; opacity: 0; transition: opacity .2s; }
     .day-tab .dot.visible { opacity: 1; }
 
@@ -91,48 +93,51 @@
     .day-panel { display: none; }
     .day-panel.active { display: block; }
     .day-header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 18px; }
-    .day-header h3 { font-family: 'Suez One', serif; font-size: 1.2rem; }
+    .day-header h3 { font-family: 'Archivo', sans-serif; font-weight: 800; letter-spacing: -0.2px; font-size: 1.2rem; }
     .day-header .date-str { font-size: 0.8rem; color: var(--ink-soft); }
 
     /* PRODUCT TABLE */
     table.ptable { width: 100%; border-collapse: collapse; }
     table.ptable thead tr { border-bottom: 2px solid var(--ink); }
-    table.ptable th { padding: 8px 12px; text-align: left; font-size: 0.67rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--ink-soft); }
+    table.ptable th { padding: 8px 12px; text-align: left; font-family: 'DM Mono', monospace; font-size: 0.66rem; font-weight: 500; letter-spacing: 1.5px; text-transform: uppercase; color: var(--ink-soft); }
     table.ptable th:last-child { text-align: center; }
     table.ptable td { padding: 14px 12px; border-bottom: 1px solid var(--cream-dk); font-size: 0.88rem; vertical-align: middle; }
     table.ptable tr:last-child td { border-bottom: none; }
     table.ptable tr:hover td { background: var(--cream); }
-    table.ptable td.code { font-family: 'Courier New', monospace; font-size: 0.75rem; color: var(--ink-soft); }
+    table.ptable td.code { font-family: 'DM Mono', monospace; font-size: 0.74rem; color: var(--ink-soft); }
     table.ptable td:last-child { text-align: center; }
 
     /* ── CATEGORY CHIPS ── */
     .cat-chip {
       display: inline-block;
-      font-family: 'Courier New', monospace;
+      font-family: 'DM Mono', monospace;
       font-size: 0.72rem;
-      font-weight: 700;
+      font-weight: 500;
       letter-spacing: 0.3px;
       padding: 3px 8px;
       border-radius: 4px;
       white-space: nowrap;
+      background: var(--cream-dk);
+      color: var(--ink-soft);
+      border: 1px solid var(--line);
     }
-    .cat-Ensalada { background: #5BBF6A; color: #fff; }
-    .cat-Bowl     { background: #F5C518; color: #1D1D1B; }
-    .cat-Platos   { background: #8B6347; color: #fff; }
-    .cat-Sopa     { background: #F4A0B0; color: #1D1D1B; }
+    .cat-Ensalada { background: var(--kitchen); color: #fff; border-color: var(--kitchen); }
+    .cat-Bowl     { background: var(--amarillo); color: var(--ink); border-color: var(--amarillo); }
+    .cat-Platos   { background: var(--ink); color: #fff; border-color: var(--ink); }
+    .cat-Sopa     { background: #E7E5FA; color: var(--ink); border-color: var(--kitchen); }
 
     /* QTY */
     .qty-wrap { display: inline-flex; align-items: center; border: 1.5px solid var(--line); border-radius: 6px; overflow: hidden; background: var(--white); }
     .qty-btn { width: 34px; height: 34px; border: none; background: var(--cream); font-size: 1.1rem; cursor: pointer; color: var(--ink); display: flex; align-items: center; justify-content: center; transition: background .12s; }
     .qty-btn:hover { background: var(--cream-dk); }
-    .qty-input { width: 48px; height: 34px; text-align: center; border: none; border-left: 1px solid var(--line); border-right: 1px solid var(--line); font-size: 0.92rem; font-family: 'Lato', sans-serif; font-weight: 700; background: var(--white); color: var(--ink); -moz-appearance: textfield; }
+    .qty-input { width: 48px; height: 34px; text-align: center; border: none; border-left: 1px solid var(--line); border-right: 1px solid var(--line); font-size: 0.92rem; font-family: 'Archivo', sans-serif; font-weight: 700; background: var(--white); color: var(--ink); -moz-appearance: textfield; }
     .qty-input::-webkit-inner-spin-button, .qty-input::-webkit-outer-spin-button { -webkit-appearance: none; }
     .qty-input:focus { outline: none; background: #FFFEF8; }
 
     /* RESUMEN */
     .summary-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(155px, 1fr)); gap: 10px; margin-bottom: 26px; }
     .s-day { background: var(--cream); border: 1px solid var(--line); border-radius: 8px; padding: 13px 15px; }
-    .s-day-name { font-size: 0.67rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--accent2); margin-bottom: 7px; }
+    .s-day-name { font-family: 'DM Mono', monospace; font-size: 0.66rem; font-weight: 500; letter-spacing: 1.5px; text-transform: uppercase; color: var(--accent2); margin-bottom: 7px; }
     .s-item { font-size: 0.79rem; color: var(--ink-soft); margin-bottom: 2px; line-height: 1.4; }
     .s-empty { font-size: 0.77rem; color: var(--line); font-style: italic; }
     .divider { height: 1px; background: var(--cream-dk); margin: 22px 0; }
@@ -140,7 +145,7 @@
     /* SUBMIT */
     .submit-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
     .submit-note { font-size: 0.8rem; color: var(--ink-soft); max-width: 360px; line-height: 1.5; }
-    .btn-confirm { background: var(--ink); color: var(--white); border: 2px solid var(--ink); padding: 14px 44px; border-radius: 6px; font-size: 0.85rem; font-weight: 700; font-family: 'Lato', sans-serif; letter-spacing: 1.5px; text-transform: uppercase; cursor: pointer; transition: background .18s, color .18s, transform .15s; white-space: nowrap; }
+    .btn-confirm { background: var(--ink); color: var(--white); border: 2px solid var(--ink); padding: 14px 44px; border-radius: 6px; font-size: 0.85rem; font-weight: 700; font-family: 'Archivo', sans-serif; letter-spacing: 1.5px; text-transform: uppercase; cursor: pointer; transition: background .18s, color .18s, transform .15s; white-space: nowrap; }
     .btn-confirm:hover { background: var(--white); color: var(--ink); transform: translateY(-1px); }
     .btn-confirm:disabled { background: var(--line); border-color: var(--line); color: var(--white); cursor: not-allowed; transform: none; }
     .err-strip { background: #FDECEA; border: 1px solid #E8998F; border-radius: 8px; padding: 11px 16px; font-size: 0.83rem; color: var(--err); margin-top: 14px; display: none; line-height: 1.5; }
@@ -148,10 +153,10 @@
     /* SUCCESS */
     #success-screen { display: none; max-width: 520px; margin: 72px auto; text-align: center; padding: 0 20px; }
     .success-icon { width: 68px; height: 68px; background: var(--ok); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 26px; font-size: 1.8rem; color: white; }
-    #success-screen h2 { font-family: 'Suez One', serif; font-size: 1.9rem; color: var(--ink); margin-bottom: 10px; }
+    #success-screen h2 { font-family: 'Archivo', sans-serif; font-weight: 800; font-size: 1.9rem; color: var(--ink); margin-bottom: 10px; }
     #success-screen .success-sede { display: inline-block; background: var(--ink); color: white; font-size: 0.75rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; padding: 5px 14px; border-radius: 4px; margin-bottom: 16px; }
     #success-screen p { font-size: 0.92rem; color: var(--ink-soft); line-height: 1.65; margin-bottom: 30px; max-width: 380px; margin-left: auto; margin-right: auto; }
-    .btn-back { display: inline-block; padding: 13px 36px; border: 2px solid var(--ink); border-radius: 6px; color: var(--ink); font-weight: 700; font-size: 0.82rem; letter-spacing: 1.5px; text-transform: uppercase; cursor: pointer; background: transparent; font-family: 'Lato', sans-serif; transition: all .18s; }
+    .btn-back { display: inline-block; padding: 13px 36px; border: 2px solid var(--ink); border-radius: 6px; color: var(--ink); font-weight: 700; font-size: 0.82rem; letter-spacing: 1.5px; text-transform: uppercase; cursor: pointer; background: transparent; font-family: 'Archivo', sans-serif; transition: all .18s; }
     .btn-back:hover { background: var(--ink); color: var(--white); }
 
     /* SPINNER */
@@ -179,13 +184,13 @@
     #login-screen { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px 20px; background: var(--cream); }
     .login-box { background: var(--white); border: 1.5px solid var(--line); border-radius: var(--radius); padding: 44px 40px 40px; width: 100%; max-width: 400px; text-align: center; }
     .login-box .login-logo { margin-bottom: 28px; }
-    .login-box h2 { font-family: 'Suez One', serif; font-size: 1.4rem; margin-bottom: 6px; }
+    .login-box h2 { font-family: 'Archivo', sans-serif; font-weight: 800; font-size: 1.4rem; margin-bottom: 6px; }
     .login-box .login-sub { font-size: 0.82rem; color: var(--ink-soft); margin-bottom: 28px; }
     .login-field { text-align: left; margin-bottom: 16px; }
     .login-field label { display: block; font-size: 0.72rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--ink-soft); margin-bottom: 6px; }
-    .login-field input { width: 100%; padding: 11px 14px; border: 1.5px solid var(--line); border-radius: 6px; font-size: 0.92rem; font-family: 'Lato', sans-serif; background: var(--cream); color: var(--ink); transition: border-color .15s; }
+    .login-field input { width: 100%; padding: 11px 14px; border: 1.5px solid var(--line); border-radius: 6px; font-size: 0.92rem; font-family: 'Archivo', sans-serif; background: var(--cream); color: var(--ink); transition: border-color .15s; }
     .login-field input:focus { outline: none; border-color: var(--ink); background: var(--white); }
-    .btn-login { width: 100%; margin-top: 8px; background: var(--ink); color: var(--white); border: 2px solid var(--ink); padding: 13px; border-radius: 6px; font-size: 0.88rem; font-weight: 700; font-family: 'Lato', sans-serif; letter-spacing: 1.5px; text-transform: uppercase; cursor: pointer; transition: background .18s, color .18s; }
+    .btn-login { width: 100%; margin-top: 8px; background: var(--ink); color: var(--white); border: 2px solid var(--ink); padding: 13px; border-radius: 6px; font-size: 0.88rem; font-weight: 700; font-family: 'Archivo', sans-serif; letter-spacing: 1.5px; text-transform: uppercase; cursor: pointer; transition: background .18s, color .18s; }
     .btn-login:hover { background: var(--white); color: var(--ink); }
     .btn-login:disabled { background: var(--line); border-color: var(--line); color: var(--white); cursor: not-allowed; }
     .login-error { background: #FDECEA; border: 1px solid #E8998F; border-radius: 6px; padding: 10px 14px; font-size: 0.82rem; color: var(--err); margin-top: 14px; display: none; }
@@ -211,9 +216,9 @@
   <div class="login-box fade-in">
     <div class="login-logo">
       <svg width="200" height="72" viewBox="0 0 340 110" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="FEED">
-        <text x="0" y="78" font-family="'Arial Black', Impact, sans-serif" font-size="90" font-weight="900" fill="#1D1D1B" letter-spacing="-2">FEED</text>
-        <text x="318" y="20" font-family="Arial, sans-serif" font-size="18" fill="#1D1D1B">®</text>
-        <text x="2" y="100" font-family="Arial, sans-serif" font-size="11" font-weight="700" fill="#1D1D1B" letter-spacing="2.5">HAPPINESS IS HOMEMADE</text>
+        <text x="0" y="78" font-family="Archivo, sans-serif" font-size="90" font-weight="900" fill="#1F1F1F" letter-spacing="-2">FEED</text>
+        <text x="318" y="20" font-family="Archivo, sans-serif" font-size="18" fill="#1F1F1F">®</text>
+        <text x="2" y="100" font-family="DM Mono, monospace" font-size="11" font-weight="500" fill="#1F1F1F" letter-spacing="2.5">HAPPINESS IS HOMEMADE</text>
       </svg>
     </div>
     <h2>Portal Pfizer</h2>
@@ -238,9 +243,9 @@
 
 <header>
   <svg width="220" height="80" viewBox="0 0 340 110" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="FEED">
-    <text x="0" y="78" font-family="'Arial Black', Impact, sans-serif" font-size="90" font-weight="900" fill="#1D1D1B" letter-spacing="-2">FEED</text>
-    <text x="318" y="20" font-family="Arial, sans-serif" font-size="18" fill="#1D1D1B">®</text>
-    <text x="2" y="100" font-family="Arial, sans-serif" font-size="11" font-weight="700" fill="#1D1D1B" letter-spacing="2.5">HAPPINESS IS HOMEMADE</text>
+    <text x="0" y="78" font-family="Archivo, sans-serif" font-size="90" font-weight="900" fill="#1F1F1F" letter-spacing="-2">FEED</text>
+    <text x="318" y="20" font-family="Archivo, sans-serif" font-size="18" fill="#1F1F1F">®</text>
+    <text x="2" y="100" font-family="DM Mono, monospace" font-size="11" font-weight="500" fill="#1F1F1F" letter-spacing="2.5">HAPPINESS IS HOMEMADE</text>
   </svg>
   <div style="display:flex; align-items:center; gap:18px;">
     <div class="header-tag">Portal de pedidos · Pfizer</div>
@@ -288,7 +293,7 @@
     <div class="card fade-in">
       <div class="order-sede-label">
         <span class="card-label" style="margin-bottom:0">Pedido —</span>
-        <span id="order-sede-title" style="font-family:'Suez One',serif; font-size:1.05rem;"></span>
+        <span id="order-sede-title" style="font-family:'Archivo', sans-serif; font-weight:800; letter-spacing:-0.2px; font-size:1.05rem;"></span>
       </div>
       <div style="height:18px"></div>
       <div class="edit-strip" id="edit-strip">
@@ -334,7 +339,7 @@
 // ════════════════════════════════════════════════
 // CONFIGURACIÓN
 // ════════════════════════════════════════════════
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwM8XhfIXrae5YWz8pf5aKhWl19KX9gkenZCthb4e1AYM-2Ssjq24VAILV3VcRLILRc/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwFagHkVzPnzNfbjZmwruQhSlLHE51ffzOXggNRnfQN2REhXtw6kiZ1RK1uKy4P6gH-/exec';
 
 // El catálogo YA NO es fijo: se carga desde el Sheet "Catalogo" vía Apps Script.
 // Arranca vacío y se llena en cargarCatalogo().
@@ -561,8 +566,11 @@ function startOrder(sede) {
 // Menú vigente ese día (ya viene filtrado por "Activo" desde el Sheet).
 // dow: índice de día de semana (0=Domingo..6=Sábado), igual que Date.getDay().
 // Si un producto no tiene días asignados en el Sheet, se ofrece todos los días.
+function normalizarDia(s) {
+  return String(s || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
 function getActiveProducts(dow) {
-  const diaNombre = DAY_NAMES[dow];
+  const diaNombre = normalizarDia(DAY_NAMES[dow]);
   return PRODUCTS.filter(p => !p.dias || p.dias.length === 0 || p.dias.includes(diaNombre));
 }
 
