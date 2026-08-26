@@ -192,6 +192,25 @@ const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyAe55woTajUiyp
 const DAY_NAMES = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 const DAY_SHORT = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
 
+// Mapeo de las categorías reales de la base (articulo_categoria) a los
+// grupos de negocio que ve el cliente en el pedido. Todo lo que no esté
+// mapeado cae en "Otros" al final.
+const GRUPO_ORDEN = ['Almuerzo', 'Street food', 'Ensaladas', 'Snacks', 'Bebidas', 'Otros'];
+const CATEGORIA_A_GRUPO = {
+  'plato del dia proteina': 'Almuerzo', 'plato del dia vegetariano': 'Almuerzo',
+  'platos vending': 'Almuerzo', 'pasta': 'Almuerzo', 'pastas': 'Almuerzo',
+  'proteina': 'Almuerzo', 'bowl proteina': 'Almuerzo', 'bowl vegetariano': 'Almuerzo',
+  'pizza': 'Street food', 'wrap': 'Street food', 'wrap con guarnicion': 'Street food',
+  'wrap sin guarnicion': 'Street food', 'sandwich': 'Street food',
+  'sandwich con guarnicion': 'Street food', 'sandwich sin guarnicion': 'Street food',
+  'ensalada': 'Ensaladas',
+  'snack dulce': 'Snacks', 'snack salado': 'Snacks', 'desayuno': 'Snacks', 'panificado': 'Snacks',
+  'bebidas': 'Bebidas',
+};
+function grupoDeCategoria(categoria) {
+  return CATEGORIA_A_GRUPO[String(categoria || '').trim().toLowerCase()] || 'Otros';
+}
+
 let sessionToken = sessionStorage.getItem('pfz_token') || null;
 let sessionUsuario = sessionStorage.getItem('pfz_usuario') || null;
 let sessionTipo = sessionStorage.getItem('pfz_tipo') || null;
@@ -317,27 +336,43 @@ function buildClienteUI() {
     panel.className = 'day-panel' + (idx===0?' active':'');
     panel.id = 'cpanel-' + dia.fecha;
 
-    const rows = dia.productos.map(p => `
-      <tr>
-        <td class="code">${p.codigo}</td>
-        <td>${p.nombre}<br><span style="font-size:0.7rem;color:var(--accent2)">${p.categoria||''}</span></td>
-        <td>
-          <div class="qty-wrap">
-            <button class="qty-btn" onclick="changeCantCliente('${dia.fecha}','${p.codigo}',-1)">−</button>
-            <input class="qty-input" type="number" min="0" value="${clienteData[dia.fecha][p.codigo]||0}"
-              id="cqty-${dia.fecha}-${p.codigo}"
-              oninput="setCantCliente('${dia.fecha}','${p.codigo}',this.value)"
-              onchange="setCantCliente('${dia.fecha}','${p.codigo}',this.value)" />
-            <button class="qty-btn" onclick="changeCantCliente('${dia.fecha}','${p.codigo}',1)">+</button>
-          </div>
-        </td>
-      </tr>`).join('');
+    const porGrupo = {};
+    dia.productos.forEach(p => {
+      const g = grupoDeCategoria(p.categoria);
+      if (!porGrupo[g]) porGrupo[g] = [];
+      porGrupo[g].push(p);
+    });
+
+    const gruposConItems = GRUPO_ORDEN.filter(g => porGrupo[g] && porGrupo[g].length > 0);
+
+    const secciones = gruposConItems.map(g => {
+      const filas = porGrupo[g].map(p => `
+        <tr>
+          <td>${p.nombre}</td>
+          <td>
+            <div class="qty-wrap">
+              <button class="qty-btn" onclick="changeCantCliente('${dia.fecha}','${p.codigo}',-1)">−</button>
+              <input class="qty-input" type="number" min="0" value="${clienteData[dia.fecha][p.codigo]||0}"
+                id="cqty-${dia.fecha}-${p.codigo}"
+                oninput="setCantCliente('${dia.fecha}','${p.codigo}',this.value)"
+                onchange="setCantCliente('${dia.fecha}','${p.codigo}',this.value)" />
+              <button class="qty-btn" onclick="changeCantCliente('${dia.fecha}','${p.codigo}',1)">+</button>
+            </div>
+          </td>
+        </tr>`).join('');
+
+      return `
+        <div style="margin-bottom:22px;">
+          <div class="card-label">${g}</div>
+          <table class="ptable"><thead><tr><th>Producto</th><th>Cantidad</th></tr></thead><tbody>${filas}</tbody></table>
+        </div>`;
+    }).join('');
 
     panel.innerHTML = `
       <div class="day-header"><h3>${DAY_NAMES[dow]}</h3><span class="date-str">${d.toLocaleDateString('es-AR',{day:'numeric',month:'long'})}</span></div>
       ${dia.productos.length === 0
         ? '<p style="color:var(--ink-soft);font-size:0.85rem">Todavía no hay menú cargado para este día.</p>'
-        : '<table class="ptable"><thead><tr><th>Código</th><th>Producto</th><th>Cantidad</th></tr></thead><tbody>'+rows+'</tbody></table>'}
+        : secciones}
     `;
     panelsEl.appendChild(panel);
     refreshClienteDot(dia.fecha);
