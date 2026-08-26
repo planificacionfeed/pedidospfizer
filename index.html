@@ -140,7 +140,7 @@
       <div class="card">
         <div class="card-label">Resumen</div>
         <h2 style="margin-bottom:18px">Lo que llevás cargado</h2>
-        <div class="summary-grid" id="cliente-summary-grid"></div>
+        <div id="cliente-summary-grid" style="overflow-x:auto; margin-bottom:20px;"></div>
         <div style="display:flex; justify-content:flex-end; gap:12px;">
           <button class="btn-confirm" id="btn-submit-cliente" onclick="submitPedidoCliente()">Confirmar pedido</button>
         </div>
@@ -195,7 +195,7 @@
 // ════════════════════════════════════════════════
 // CONFIGURACIÓN — reemplazar por la URL del deployment de Pfizer
 // ════════════════════════════════════════════════
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzTXo_d1JvTWXHbSrZhzFCc8OHn2TtaidqQl5Xm9-VZCgl74MfkYwatY4ZbzJDlTFzU/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyaC-DrO-PYnVsBUsxBelOXs2dyTNwYbIYNXb2XrZL6cQAnpiEln4h4VMtWXK5jnOWm/exec';
 
 const DAY_NAMES = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 const DAY_SHORT = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
@@ -310,6 +310,18 @@ async function irACliente() {
   try {
     const res = await fetch(APPS_SCRIPT_URL + '?action=getPedidoInicial&token=' + encodeURIComponent(sessionToken));
     const json = await res.json();
+
+    // Un error real del backend (sesión vencida, falla de BigQuery, etc.)
+    // NO es lo mismo que "período cerrado" — antes se mostraba como cerrado
+    // por error, ocultando el problema real.
+    if (json.status === 'error') {
+      document.getElementById('cliente-pedido').style.display = 'none';
+      document.getElementById('cliente-cerrado').style.display = 'block';
+      document.getElementById('cliente-cerrado-texto').textContent =
+        (json.code === 'NO_AUTH' ? 'Tu sesión venció. Cerrá sesión y volvé a ingresar. ' : 'Hubo un error al cargar el pedido. ') +
+        (json.message || '');
+      return;
+    }
 
     if (!json.abierta) {
       document.getElementById('cliente-pedido').style.display = 'none';
@@ -436,23 +448,74 @@ function refreshClienteDot(fecha) {
   if (dot) dot.classList.toggle('visible', cambio);
 }
 
-// Resumen en vivo: qué hay cargado (cantidad > 0) por día, se actualiza
-// cada vez que se toca un +/- o se escribe una cantidad.
+// Resumen en vivo, con el mismo formato de tabla que usa el mail de
+// confirmación (producto x día + total), pero sin las flechas de variación
+// respecto del pedido anterior — acá solo importa lo que se está cargando.
 function updateClienteSummary() {
   const grid = document.getElementById('cliente-summary-grid');
   if (!grid) return;
-  grid.innerHTML = clienteDias.map(dia => {
+
+  // Productos con al menos una cantidad > 0 en algún día, en orden de
+  // aparición (evita listar todo el catálogo, solo lo que se está pidiendo)
+  const codigosVistos = new Set();
+  const productosOrden = [];
+  clienteDias.forEach(dia => {
+    dia.productos.forEach(p => {
+      if (!codigosVistos.has(p.codigo) && (clienteData[dia.fecha][p.codigo]||0) > 0) {
+        codigosVistos.add(p.codigo);
+        productosOrden.push(p);
+      }
+    });
+  });
+
+  if (productosOrden.length === 0) {
+    grid.innerHTML = '<p style="color:var(--ink-soft);font-size:0.85rem;">Todavía no cargaste ningún producto.</p>';
+    return;
+  }
+
+  const headerCols = clienteDias.map(dia => {
     const d = new Date(dia.fecha + 'T00:00:00');
-    const conCantidad = dia.productos.filter(p => (clienteData[dia.fecha][p.codigo]||0) > 0);
-    const items = conCantidad.length === 0
-      ? '<div class="s-empty">Sin pedido</div>'
-      : conCantidad.map(p => `<div class="s-item">× ${clienteData[dia.fecha][p.codigo]} ${p.nombre}</div>`).join('');
-    return `
-      <div class="s-day">
-        <div class="s-day-name">${DAY_SHORT[d.getDay()]} ${d.getDate()}</div>
-        ${items}
-      </div>`;
+    return `<th style="padding:10px 12px;text-align:center;color:#fff;white-space:nowrap;">${DAY_SHORT[d.getDay()].toUpperCase()} ${d.getDate()}</th>`;
   }).join('');
+
+  const totalPorDia = {};
+  clienteDias.forEach(dia => { totalPorDia[dia.fecha] = 0; });
+
+  const filas = productosOrden.map((p, idx) => {
+    let totalProducto = 0;
+    const celdas = clienteDias.map(dia => {
+      const cant = clienteData[dia.fecha][p.codigo] || 0;
+      totalProducto += cant;
+      totalPorDia[dia.fecha] += cant;
+      return `<td style="padding:10px 12px;text-align:center;">${cant}</td>`;
+    }).join('');
+    return `<tr style="background:${idx % 2 === 0 ? 'var(--cream)' : '#fff'}">
+      <td style="padding:10px 12px;">${p.nombre}</td>${celdas}
+      <td style="padding:10px 12px;text-align:center;font-weight:bold;">${totalProducto}</td>
+    </tr>`;
+  }).join('');
+
+  const totalGeneral = Object.values(totalPorDia).reduce((s,v) => s+v, 0);
+  const celdasTotal = clienteDias.map(dia => `<td style="padding:10px 12px;text-align:center;color:#fff;font-weight:bold;">${totalPorDia[dia.fecha]}</td>`).join('');
+
+  grid.innerHTML = `
+    <table cellpadding="0" cellspacing="0" style="border-collapse:collapse;width:100%;font-size:0.85rem;">
+      <thead>
+        <tr style="background:var(--ink);">
+          <th style="padding:10px 12px;text-align:left;color:#fff;">PRODUCTO</th>
+          ${headerCols}
+          <th style="padding:10px 12px;text-align:center;color:#fff;">TOTAL</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${filas}
+        <tr style="background:var(--ok);">
+          <td style="padding:10px 12px;color:#fff;font-weight:bold;">TOTAL POR DÍA</td>
+          ${celdasTotal}
+          <td style="padding:10px 12px;text-align:center;color:#fff;font-weight:bold;">${totalGeneral}</td>
+        </tr>
+      </tbody>
+    </table>`;
 }
 
 async function submitPedidoCliente() {
