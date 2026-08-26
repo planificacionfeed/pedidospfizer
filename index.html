@@ -36,9 +36,10 @@
   .day-header{display:flex;align-items:baseline;gap:12px;margin-bottom:16px;}
   .day-header h3{font-family:'Lato',sans-serif;font-weight:900;font-size:1.1rem;}
   .date-str{font-size:0.8rem;color:var(--ink-soft);}
-  table.ptable{width:100%;border-collapse:collapse;}
+  table.ptable{width:100%;border-collapse:collapse;table-layout:fixed;}
   table.ptable thead tr{border-bottom:2px solid var(--ink);}
   table.ptable th{padding:8px 10px;text-align:left;font-size:0.65rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink-soft);}
+  table.ptable th:last-child, table.ptable td:last-child{width:160px;}
   table.ptable td{padding:12px 10px;border-bottom:1px solid var(--cream-dk);font-size:0.87rem;vertical-align:middle;}
   .code{font-family:'DM Mono',monospace;font-size:0.72rem;color:var(--ink-soft);}
   .qty-wrap{display:inline-flex;align-items:center;border:1.5px solid var(--line);border-radius:6px;overflow:hidden;background:var(--white);}
