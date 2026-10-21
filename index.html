@@ -205,7 +205,7 @@ const DAY_SHORT = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
 // mapeado cae en "Otros" al final.
 // IMPORTANTE: cada grupo usado acá tiene que estar en GRUPO_ORDEN, si no
 // esos productos no se muestran en el pedido ni en la vista previa.
-const GRUPO_ORDEN = ['Almuerzo', 'Street food', 'Ensaladas', 'Make your own', 'Snacks', 'Bebidas', 'Otros'];
+const GRUPO_ORDEN = ['Almuerzo', 'Street food', 'Ensaladas', 'Make your own', 'Postres & Snacks', 'Bebidas', 'Otros'];
 const CATEGORIA_A_GRUPO = {
   'plato del dia proteina': 'Almuerzo', 'plato del dia vegetariano': 'Almuerzo',
   'platos vending': 'Almuerzo', 'pasta': 'Almuerzo', 'pastas': 'Almuerzo',
@@ -213,10 +213,10 @@ const CATEGORIA_A_GRUPO = {
   'pizza': 'Street food', 'wrap': 'Street food', 'wrap con guarnicion': 'Street food',
   'wrap sin guarnicion': 'Street food', 'sandwich': 'Street food',
   'sandwich con guarnicion': 'Street food', 'sandwich sin guarnicion': 'Street food',
-  'ensalada': 'Ensaladas', 'yogur': 'Snacks',
-  'snack dulce': 'Snacks', 'snack salado': 'Snacks', 'desayuno': 'Snacks', 'panificado': 'Snacks',
+  'ensalada': 'Ensaladas', 'yogur': 'Postres & Snacks',
+  'snack dulce': 'Postres & Snacks', 'snack salado': 'Postres & Snacks', 'desayuno': 'Postres & Snacks', 'panificado': 'Postres & Snacks',
   'bebidas': 'Bebidas', 'empanada warmer': 'Street food', 'empanada vending': 'Bebidas',
-  'make your own guarnicion': 'Make your own', 'make your own proteina': 'Make your own',
+  'make your own guarnicion': 'Make your own', 'make your own proteina': 'Make your own','side parrillada': 'Make your own','side': 'Make your own',
 };
 function grupoDeCategoria(categoria) {
   return CATEGORIA_A_GRUPO[String(categoria || '').trim().toLowerCase()] || 'Otros';
