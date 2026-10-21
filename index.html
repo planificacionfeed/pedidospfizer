@@ -203,7 +203,7 @@ const DAY_SHORT = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
 // Mapeo de las categorías reales de la base (articulo_categoria) a los
 // grupos de negocio que ve el cliente en el pedido. Todo lo que no esté
 // mapeado cae en "Otros" al final.
-const GRUPO_ORDEN = ['Almuerzo', 'Street food', 'Ensaladas', 'Snacks', 'Bebidas', 'Otros'];
+const GRUPO_ORDEN = ['Almuerzo', 'Street food', 'Ensaladas', 'Postres & Snacks', 'Bebidas', 'Otros'];
 const CATEGORIA_A_GRUPO = {
   'plato del dia proteina': 'Almuerzo', 'plato del dia vegetariano': 'Almuerzo',
   'platos vending': 'Almuerzo', 'pasta': 'Almuerzo', 'pastas': 'Almuerzo',
@@ -211,9 +211,11 @@ const CATEGORIA_A_GRUPO = {
   'pizza': 'Street food', 'wrap': 'Street food', 'wrap con guarnicion': 'Street food',
   'wrap sin guarnicion': 'Street food', 'sandwich': 'Street food',
   'sandwich con guarnicion': 'Street food', 'sandwich sin guarnicion': 'Street food',
-  'ensalada': 'Ensaladas',
+  'ensalada': 'Ensaladas', 'yogur': 'Postres & Snacks'
   'snack dulce': 'Snacks', 'snack salado': 'Snacks', 'desayuno': 'Snacks', 'panificado': 'Snacks',
-  'bebidas': 'Bebidas',
+  'bebidas': 'Bebidas', 'empanada warmer': 'Street food', 'empanada vending': 'Bebidas', 
+  'make your own guarnicion': 'Make your own', 'make your own proteina': 'Make your own',
+  
 };
 function grupoDeCategoria(categoria) {
   return CATEGORIA_A_GRUPO[String(categoria || '').trim().toLowerCase()] || 'Otros';
