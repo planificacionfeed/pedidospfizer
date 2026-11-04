@@ -126,7 +126,7 @@
     <!-- CLIENTE: cerrado -->
     <div class="card closed-banner" id="cliente-cerrado" style="display:none">
       <h2>🔒 Período de pedido cerrado</h2>
-      <p id="cliente-cerrado-texto">El próximo período de carga abre el lunes a las 9hs.</p>
+      <p id="cliente-cerrado-texto">El próximo período de carga abre el miércoles a las 9hs.</p>
     </div>
 
     <!-- CLIENTE: pedido -->
@@ -195,7 +195,7 @@
 // ════════════════════════════════════════════════
 // CONFIGURACIÓN — reemplazar por la URL del deployment de Pfizer
 // ════════════════════════════════════════════════
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyaC-DrO-PYnVsBUsxBelOXs2dyTNwYbIYNXb2XrZL6cQAnpiEln4h4VMtWXK5jnOWm/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyLDL_iqKcJuF426lp17di_3hGn2IW-JoO1wnesfn1FP16utAs2kTqp-50YWCAzT30/exec';
 
 const DAY_NAMES = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 const DAY_SHORT = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
@@ -308,7 +308,7 @@ let clienteOriginal = {};  // fecha -> {codigo: cantidad}
 
 async function irACliente() {
   document.getElementById('hero-title').textContent = 'Pedido semanal';
-  document.getElementById('hero-desc').textContent = 'El período de carga está abierto de lunes 9hs a miércoles 15hs, para la semana siguiente.';
+  document.getElementById('hero-desc').textContent = 'El período de carga está abierto de miércoles 9hs a jueves 15hs, para la semana siguiente.';
   document.getElementById('admin-panel').style.display = 'none';
 
   try {
