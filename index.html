@@ -88,6 +88,18 @@
   .admin-day-btn{padding:9px 16px;border:1.5px solid var(--line);border-radius:8px;background:var(--cream);font-size:0.82rem;font-weight:700;cursor:pointer;}
   .admin-day-btn.active{background:var(--ink);color:var(--white);border-color:var(--ink);}
   .admin-day-btn .cnt{font-family:'DM Mono',monospace;font-weight:400;opacity:.7;margin-left:5px;}
+  .badge-temp{display:inline-block;background:#D98E041A;border:1px solid #D98E04;color:#8A5A00;border-radius:4px;padding:1px 6px;font-size:0.6rem;letter-spacing:1px;margin-right:6px;}
+  .toggle-row .p-cliente{font-size:0.72rem;color:var(--ok);font-style:italic;}
+  .mini-btn{font-family:'DM Mono',monospace;font-size:0.66rem;letter-spacing:0.5px;padding:5px 9px;border-radius:5px;cursor:pointer;white-space:nowrap;background:var(--cream);color:var(--ink-soft);border:1px solid var(--line);}
+  .mini-btn:hover{border-color:var(--ink);}
+  .swatch{width:28px;height:28px;border-radius:50%;border:2px solid var(--white);box-shadow:0 0 0 1.5px var(--line);cursor:pointer;padding:0;position:relative;display:inline-flex;align-items:center;justify-content:center;font-weight:700;color:var(--ink-soft);font-size:0.9rem;background:var(--cream);overflow:hidden;}
+  .swatch.sel{box-shadow:0 0 0 2.5px var(--ink);}
+  .swatch-custom input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;border:none;padding:0;}
+  .modal-field{margin-bottom:16px;}
+  .modal-field label{display:block;font-size:0.7rem;font-weight:700;letter-spacing:1.3px;text-transform:uppercase;color:var(--ink-soft);margin-bottom:6px;}
+  .modal-field input[type=text],.modal-field select{width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:6px;font-size:0.9rem;background:var(--cream);font-family:inherit;color:var(--ink);}
+  .modal-field input[type=text]:focus,.modal-field select:focus{outline:none;border-color:var(--ink);background:var(--white);}
+  .modal-check{display:flex;align-items:center;gap:8px;font-size:0.85rem;color:var(--ink-soft);margin-bottom:6px;cursor:pointer;}
   footer{border-top:1.5px solid var(--line);padding:18px 40px;text-align:center;font-size:0.75rem;color:var(--ink-soft);background:var(--white);}
 </style>
 </head>
@@ -150,6 +162,29 @@
 
     <!-- ADMIN -->
     <div id="admin-panel" style="display:none">
+
+      <!-- MENÚ ESPECIAL -->
+      <div class="card" id="especial-card">
+        <div class="card-label">Menú especial —</div>
+        <h2 style="margin-bottom:12px;">Menú temático de la semana</h2>
+        <label class="modal-check" style="margin-bottom:0;"><input type="checkbox" id="esp-activo" onchange="toggleEspecialActivo(this.checked)" /> Esta semana hay un menú especial (ej: “Menú Chileno”)</label>
+        <div id="esp-config" style="display:none; margin-top:18px;">
+          <div style="display:flex; gap:14px; flex-wrap:wrap; align-items:flex-end;">
+            <div class="modal-field" style="flex:1; min-width:220px; margin-bottom:0;">
+              <label for="esp-titulo">Título</label>
+              <input type="text" id="esp-titulo" maxlength="60" placeholder="Ej: Menú Chileno" oninput="onEspecialCambio()" />
+            </div>
+            <div class="modal-field" style="margin-bottom:0;">
+              <label>Color</label>
+              <div style="display:flex; align-items:center; gap:6px;" id="esp-swatches"></div>
+            </div>
+          </div>
+          <div id="esp-muestra" style="margin-top:18px;"></div>
+          <div id="esp-lista"></div>
+          <p style="font-size:0.8rem; color:var(--ink-soft); line-height:1.5; margin-top:10px;">Para sumar productos, tocá <strong>★ Especial</strong> en la lista de abajo, o creá uno nuevo con <strong>+ Crear producto</strong>. Los días se activan igual que el resto (toggle o “Toda la semana”). Al cliente le aparece como un recuadro propio, arriba de todo.</p>
+        </div>
+      </div>
+
       <div class="card">
         <div class="card-label">Menú semanal —</div>
         <h2 id="admin-semana-title">—</h2>
@@ -157,7 +192,10 @@
           <div class="admin-day-tabs" id="admin-day-tabs"></div>
           <button class="btn-back" style="padding:8px 16px; font-size:0.72rem; border-color:var(--err); color:var(--err);" onclick="destildarTodoElDia()">Destildar todo el día</button>
         </div>
-        <input type="text" class="search-box" id="admin-search" placeholder="Buscar por código, descripción o categoría…" oninput="renderAdminLista()" />
+        <div style="display:flex; gap:10px; align-items:flex-start;">
+          <input type="text" class="search-box" id="admin-search" placeholder="Buscar por código, descripción o categoría…" oninput="renderAdminLista()" style="flex:1;" />
+          <button class="btn-back" style="padding:10px 16px; font-size:0.72rem; white-space:nowrap;" onclick="abrirCrearProducto()">+ Crear producto</button>
+        </div>
         <div id="admin-lista" style="max-height:520px; overflow-y:auto;"></div>
         <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:18px;">
           <span id="admin-save-ok" style="display:none; color:var(--ok); font-weight:700; font-size:0.85rem; align-self:center;">✓ Guardado</span>
@@ -173,6 +211,34 @@
     <h2 style="font-family:'Lato',sans-serif;font-weight:900;font-size:1.6rem;margin-bottom:10px;">¡Pedido confirmado!</h2>
     <p style="font-size:0.9rem;color:var(--ink-soft);line-height:1.6;margin-bottom:26px;">El pedido fue registrado y el equipo de planificación recibió la notificación.</p>
     <button class="btn-back" onclick="location.reload()">Volver al inicio</button>
+  </div>
+
+  <!-- CREAR PRODUCTO TEMPORAL (admin) -->
+  <div id="crear-overlay" style="display:none; position:fixed; inset:0; background:rgba(31,31,31,0.6); z-index:500; align-items:center; justify-content:center; padding:20px;">
+    <div style="background:var(--white); border-radius:var(--radius); max-width:460px; width:100%; max-height:85vh; overflow-y:auto; padding:28px 30px;">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
+        <div class="card-label" style="margin-bottom:0">Producto temporal —</div>
+        <button onclick="cerrarCrearProducto()" style="background:none; border:none; font-size:1.3rem; cursor:pointer; color:var(--ink-soft); line-height:1;">✕</button>
+      </div>
+      <h2 style="margin-top:6px; margin-bottom:8px;">Crear producto</h2>
+      <p style="font-size:0.82rem; color:var(--ink-soft); line-height:1.5; margin-bottom:18px;">Para productos que no están en la codificación (por ej. “Chips Maretti – sabor según disponibilidad”). Vale solo para esta semana: se guarda junto con el menú y no queda en ningún catálogo.</p>
+      <div class="modal-field">
+        <label for="crear-nombre">Nombre</label>
+        <input type="text" id="crear-nombre" maxlength="120" placeholder="Ej: Chips Maretti (sabor según disponibilidad)" />
+      </div>
+      <div class="modal-field">
+        <label for="crear-categoria">Categoría</label>
+        <select id="crear-categoria"></select>
+      </div>
+      <label class="modal-check"><input type="radio" name="crear-dias" id="crear-dia" checked /> <span id="crear-dia-label">Activarlo en el día seleccionado</span></label>
+      <label class="modal-check"><input type="radio" name="crear-dias" id="crear-semana" /> Activarlo toda la semana</label>
+      <label class="modal-check" id="crear-especial-wrap" style="display:none;"><input type="checkbox" id="crear-especial" /> <span id="crear-especial-label">Agregarlo al menú especial</span></label>
+      <div class="err-strip" id="crear-error"></div>
+      <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:20px;">
+        <button class="btn-back" style="padding:10px 20px;" onclick="cerrarCrearProducto()">Cancelar</button>
+        <button class="btn-confirm" style="padding:11px 26px;" id="btn-crear-producto" onclick="crearProducto()">Crear</button>
+      </div>
+    </div>
   </div>
 
   <!-- VISTA PREVIA -->
@@ -195,7 +261,7 @@
 // ════════════════════════════════════════════════
 // CONFIGURACIÓN — reemplazar por la URL del deployment de Pfizer
 // ════════════════════════════════════════════════
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyLDL_iqKcJuF426lp17di_3hGn2IW-JoO1wnesfn1FP16utAs2kTqp-50YWCAzT30/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzG_WTteo9MXdDf1F0CXZGjroHTyuTMhQdzaGs-hfWcJgzOv799M5JKUyjzgPsX1E89/exec';
 
 const DAY_NAMES = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 const DAY_SHORT = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
@@ -231,16 +297,81 @@ const GRUPO_COLORES = {
   'Bebidas': '#568CD6',
   'Otros': '#1F1F1F',
 };
-function labelGrupoHTML(grupo) {
-  const color = GRUPO_COLORES[grupo] || '#1F1F1F';
+
+// Colores sugeridos para el menú especial (además se puede elegir cualquiera)
+const COLORES_ESPECIAL = ['#E4572E', '#0E7C86', '#7B2D8E', '#C9302C', '#2E6B4A', '#D98E04', '#1F4E9C', '#1F1F1F'];
+
+// ════════════════════════════════════════════════
+// NOMBRES EN PANTALLA — palabras que NO se le muestran al cliente.
+// Solo cambia lo que se ve: en la base, en los pedidos y en el mail
+// interno los nombres quedan como están en la codificación.
+// Para sacar otra palabra, agregala a esta lista (mayúsculas/minúsculas da igual).
+// ════════════════════════════════════════════════
+const PALABRAS_A_OCULTAR = [
+  'con packaging',
+  'sin packaging',
+  'packaging',
+  'proveedor',
+  'warmer',
+];
+
+function escRegex(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+const REGEX_OCULTAR = [...PALABRAS_A_OCULTAR]
+  .sort((a, b) => b.length - a.length)   // primero las frases más largas
+  .map(w => new RegExp('(^|[\\s\\-–—(/,])' + escRegex(w) + '(?=$|[\\s\\-–—)/,.])', 'gi'));
+
+function limpiarNombre(nombre) {
+  const original = String(nombre || '');
+  let out = original;
+  REGEX_OCULTAR.forEach(re => { out = out.replace(re, '$1'); });
+  out = out
+    .replace(/\(\s*\)/g, '')          // paréntesis que quedaron vacíos
+    .replace(/\s+([,.)])/g, '$1')
+    .replace(/\s{2,}/g, ' ')
+    .replace(/^[\s\-–—,/]+|[\s\-–—,/]+$/g, '')
+    .trim();
+  return out || original;
+}
+
+function labelGrupoHTML(titulo, colorOverride) {
+  const color = colorOverride || GRUPO_COLORES[titulo] || '#1F1F1F';
   return `
     <div style="display:flex; align-items:center; gap:12px; margin-bottom:14px;">
       <span style="display:inline-flex; align-items:center; gap:8px; background:${color}1A; border:1.5px solid ${color}; color:${color}; padding:6px 16px 6px 12px; border-radius:999px; font-family:'DM Mono',monospace; font-size:0.72rem; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; white-space:nowrap;">
         <span style="width:8px; height:8px; border-radius:50%; background:${color}; display:inline-block; flex-shrink:0;"></span>
-        ${grupo}
+        ${escHtml(titulo)}
       </span>
       <span style="flex:1; height:1px; background:${color}33;"></span>
     </div>`;
+}
+
+// Estilo del recuadro de cada sección. El menú especial va con borde
+// completo y fondo un poco más marcado para que se destaque.
+function estiloSeccion(color, especial) {
+  return especial
+    ? `margin-bottom:22px; padding:16px 16px 4px; border:2px solid ${color}; border-left-width:6px; background:${color}14; border-radius:8px;`
+    : `margin-bottom:22px; padding:16px 16px 4px; border-left:4px solid ${color}; background:${color}0D; border-radius:0 8px 8px 0;`;
+}
+
+// Arma las secciones a mostrar: primero los menús especiales (en el orden
+// en que aparecen) y después los grupos normales según GRUPO_ORDEN.
+// getCat / getSeccion / getColor dicen de dónde sacar cada dato del producto.
+function armarSecciones(productos, getCat, getSeccion, getColor) {
+  const especiales = [], idxEsp = {}, porGrupo = {};
+  productos.forEach(p => {
+    const sec = getSeccion(p);
+    if (sec) {
+      if (!(sec in idxEsp)) { idxEsp[sec] = especiales.length; especiales.push({ titulo: sec, color: getColor(p) || '#1F1F1F', especial: true, items: [] }); }
+      especiales[idxEsp[sec]].items.push(p);
+    } else {
+      const g = grupoDeCategoria(getCat(p));
+      (porGrupo[g] = porGrupo[g] || []).push(p);
+    }
+  });
+  return especiales.concat(
+    GRUPO_ORDEN.filter(g => porGrupo[g] && porGrupo[g].length)
+      .map(g => ({ titulo: g, color: GRUPO_COLORES[g] || '#1F1F1F', especial: false, items: porGrupo[g] }))
+  );
 }
 
 let sessionToken = sessionStorage.getItem('pfz_token') || null;
@@ -248,6 +379,14 @@ let sessionUsuario = sessionStorage.getItem('pfz_usuario') || null;
 let sessionTipo = sessionStorage.getItem('pfz_tipo') || null;
 
 function isoDate(d){ return d.toISOString().split('T')[0]; }
+
+// Escapa texto antes de meterlo en HTML (los productos creados a mano
+// pueden tener comillas, < >, etc.)
+function escHtml(s) {
+  return String(s === null || s === undefined ? '' : s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
 
 // ════════════════════════════════════════════════
 // LOGIN
@@ -380,19 +519,13 @@ function buildClienteUI() {
     panel.className = 'day-panel' + (idx===0?' active':'');
     panel.id = 'cpanel-' + dia.fecha;
 
-    const porGrupo = {};
-    dia.productos.forEach(p => {
-      const g = grupoDeCategoria(p.categoria);
-      if (!porGrupo[g]) porGrupo[g] = [];
-      porGrupo[g].push(p);
-    });
+    // Menú especial (si hay) arriba de todo, después los grupos normales
+    const seccionesData = armarSecciones(dia.productos, p => p.categoria, p => p.seccion, p => p.seccion_color);
 
-    const gruposConItems = GRUPO_ORDEN.filter(g => porGrupo[g] && porGrupo[g].length > 0);
-
-    const secciones = gruposConItems.map(g => {
-      const filas = porGrupo[g].map(p => `
+    const secciones = seccionesData.map(s => {
+      const filas = s.items.map(p => `
         <tr>
-          <td>${p.nombre}</td>
+          <td>${escHtml(limpiarNombre(p.nombre))}</td>
           <td>
             <div class="qty-wrap">
               <button class="qty-btn" onclick="changeCantCliente('${dia.fecha}','${p.codigo}',-1)">−</button>
@@ -406,8 +539,8 @@ function buildClienteUI() {
         </tr>`).join('');
 
       return `
-        <div style="margin-bottom:22px; padding:16px 16px 4px; border-left:4px solid ${GRUPO_COLORES[g]||'#1F1F1F'}; background:${GRUPO_COLORES[g]||'#1F1F1F'}0D; border-radius:0 8px 8px 0;">
-          ${labelGrupoHTML(g)}
+        <div style="${estiloSeccion(s.color, s.especial)}">
+          ${labelGrupoHTML(s.titulo, s.color)}
           <table class="ptable"><thead><tr><th>Producto</th><th>Cantidad</th></tr></thead><tbody>${filas}</tbody></table>
         </div>`;
     }).join('');
@@ -494,7 +627,7 @@ function updateClienteSummary() {
       return `<td style="padding:10px 12px;text-align:center;">${cant}</td>`;
     }).join('');
     return `<tr style="background:${idx % 2 === 0 ? 'var(--cream)' : '#fff'}">
-      <td style="padding:10px 12px;">${p.nombre}</td>${celdas}
+      <td style="padding:10px 12px;">${escHtml(limpiarNombre(p.nombre))}</td>${celdas}
       <td style="padding:10px 12px;text-align:center;font-weight:bold;">${totalProducto}</td>
     </tr>`;
   }).join('');
@@ -562,10 +695,15 @@ function hideClienteError(){ document.getElementById('cliente-error-msg').style.
 // ════════════════════════════════════════════════
 // ADMIN
 // ════════════════════════════════════════════════
-let adminCatalogo = [];   // [{articulo_id, articulo_desc, articulo_categoria}]
+let adminCatalogo = [];     // codificación + temporales [{articulo_id, articulo_desc, articulo_categoria, temporal?}]
 let adminFechas = [];
-let adminMenu = {};       // fecha -> Set(codigos activos)
+let adminMenu = {};         // fecha -> Set(codigos activos)
 let adminFechaActual = null;
+let adminTemporales = {};   // codigo TMP-… -> producto (solo viven en el menú de esta semana)
+let adminEspecial = { activo: false, titulo: '', color: COLORES_ESPECIAL[0], codigos: new Set() };
+
+function prodPorId(id) { return adminCatalogo.find(p => p.articulo_id === id); }
+function marcarSinGuardar() { document.getElementById('admin-save-ok').style.display = 'none'; }
 
 async function irAAdmin() {
   document.getElementById('hero-title').textContent = 'Menú semanal';
@@ -582,22 +720,38 @@ async function irAAdmin() {
     const jsonCat = await resCat.json();
     const jsonMenu = await resMenu.json();
 
-    // Si el backend devolvió un error (sesión vencida, sin permisos, etc.)
-    // lo mostramos explícito en vez de tratarlo como catálogo vacío.
     if (jsonCat.status !== 'ok' || jsonMenu.status !== 'ok') {
       const msg = jsonCat.message || jsonMenu.message || 'No se pudo cargar el catálogo.';
       const esAuth = jsonCat.code === 'NO_AUTH' || jsonMenu.code === 'NO_AUTH';
       document.getElementById('admin-lista').innerHTML =
         '<p style="color:var(--err);font-size:0.9rem;padding:14px 0;">' +
-        (esAuth ? 'Tu sesión venció. Cerrá sesión y volvé a ingresar.' : msg) +
-        '</p>';
+        escHtml(esAuth ? 'Tu sesión venció. Cerrá sesión y volvé a ingresar.' : msg) + '</p>';
       return;
     }
 
-    adminCatalogo = jsonCat.productos || [];
     adminFechas = jsonMenu.fechas || [];
     adminMenu = {};
-    adminFechas.forEach(f => { adminMenu[f] = new Set(jsonMenu.menu[f] || []); });
+    adminTemporales = {};
+    adminEspecial = { activo: false, titulo: '', color: COLORES_ESPECIAL[0], codigos: new Set() };
+
+    adminFechas.forEach(f => {
+      adminMenu[f] = new Set();
+      (jsonMenu.menu[f] || []).forEach(item => {
+        if (typeof item === 'string') item = { codigo: item };   // formato viejo
+        adminMenu[f].add(item.codigo);
+        if (item.nombre) {
+          adminTemporales[item.codigo] = { articulo_id: item.codigo, articulo_desc: item.nombre, articulo_categoria: item.categoria || '', temporal: true };
+        }
+        if (item.seccion) {
+          adminEspecial.activo = true;
+          adminEspecial.titulo = item.seccion;
+          if (item.color) adminEspecial.color = item.color;
+          adminEspecial.codigos.add(item.codigo);
+        }
+      });
+    });
+
+    adminCatalogo = Object.values(adminTemporales).concat(jsonCat.productos || []);
 
     if (adminFechas.length > 0) {
       const lunes = new Date(adminFechas[0] + 'T00:00:00');
@@ -607,6 +761,7 @@ async function irAAdmin() {
     }
 
     adminFechaActual = adminFechas[0];
+    renderEspecialCard();
     renderAdminDayTabs();
     renderAdminLista();
   } catch (e) {
@@ -623,7 +778,7 @@ function renderAdminDayTabs() {
     btn.className = 'admin-day-btn' + (f === adminFechaActual ? ' active' : '');
     btn.id = 'adtab-' + f;
     btn.innerHTML = DAY_SHORT[d.getDay()] + ' ' + d.getDate() + ' <span class="cnt" id="adcnt-' + f + '">(' + (adminMenu[f]?adminMenu[f].size:0) + ')</span>';
-    btn.onclick = () => { adminFechaActual = f; renderAdminDayTabs(); renderAdminLista(); document.getElementById('admin-save-ok').style.display='none'; };
+    btn.onclick = () => { adminFechaActual = f; renderAdminDayTabs(); renderAdminLista(); marcarSinGuardar(); };
     tabsEl.appendChild(btn);
   });
 }
@@ -641,55 +796,66 @@ function renderAdminLista() {
       (p.articulo_categoria||'').toLowerCase().includes(q)
     );
   } else {
-    // Sin búsqueda: mostrar primero los activos de este día, para no scrollear entre 1587 filas
+    // Sin búsqueda: primero los activos del día y los temporales
     productos = [...productos].sort((a,b) => {
-      const aAct = activos.has(a.articulo_id) ? 0 : 1;
-      const bAct = activos.has(b.articulo_id) ? 0 : 1;
-      return aAct - bAct;
+      const pa = activos.has(a.articulo_id) || a.temporal ? 0 : 1;
+      const pb = activos.has(b.articulo_id) || b.temporal ? 0 : 1;
+      return pa - pb;
     });
   }
 
+  let aviso = '';
   if (!q && productos.length > 150) {
-    cont.innerHTML = '<p style="color:var(--ink-soft);font-size:0.85rem;padding:14px 0;">Hay ' + adminCatalogo.length + ' productos en el catálogo. Usá el buscador para encontrar lo que necesitás (los productos activos de hoy se muestran primero).</p>';
+    aviso = '<p style="color:var(--ink-soft);font-size:0.85rem;padding:14px 0;">Hay ' + adminCatalogo.length + ' productos en el catálogo. Usá el buscador para encontrar lo que necesitás (los activos de este día se muestran primero).</p>';
     productos = productos.slice(0, 150);
   }
 
-  cont.innerHTML = productos.map(p => {
-    const checked = activos.has(p.articulo_id);
-    const enTodosLosDias = adminFechas.length > 0 && adminFechas.every(f => (adminMenu[f]||new Set()).has(p.articulo_id));
+  const colorEsp = adminEspecial.color;
+  cont.innerHTML = aviso + (productos.map(p => {
+    const id = p.articulo_id;
+    const checked = activos.has(id);
+    const enTodosLosDias = adminFechas.length > 0 && adminFechas.every(f => (adminMenu[f]||new Set()).has(id));
+    const enEspecial = adminEspecial.codigos.has(id);
+    const nombreCliente = limpiarNombre(p.articulo_desc);
+    const etiqueta = p.temporal
+      ? '<span class="badge-temp">TEMPORAL</span>'
+      : escHtml(id) + ' · ';
     return `
       <div class="toggle-row">
         <div class="p-info">
-          <span class="p-cat">${p.articulo_id} · ${p.articulo_categoria||''}</span>
-          <span>${p.articulo_desc||''}</span>
+          <span class="p-cat">${etiqueta}${escHtml(p.articulo_categoria||'')}</span>
+          <span>${escHtml(p.articulo_desc||'')}</span>
+          ${nombreCliente !== (p.articulo_desc||'') ? `<span class="p-cliente">El cliente ve: ${escHtml(nombreCliente)}</span>` : ''}
         </div>
-        <div style="display:flex; align-items:center; gap:12px;">
-          <button
-            onclick="marcarTodaLaSemana('${p.articulo_id}')"
-            title="Activar este producto los 5 días de la semana"
-            style="font-family:'DM Mono',monospace; font-size:0.66rem; letter-spacing:0.5px; padding:5px 9px; border-radius:5px; cursor:pointer; white-space:nowrap;
-              background:${enTodosLosDias ? 'var(--ok-bg)' : 'var(--cream)'}; color:${enTodosLosDias ? 'var(--ok)' : 'var(--ink-soft)'};
-              border:1px solid ${enTodosLosDias ? 'var(--ok-br)' : 'var(--line)'};">
+        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:flex-end;">
+          ${p.temporal ? `<button class="mini-btn" title="Eliminar producto temporal" onclick="eliminarTemporal('${id}')">✕</button>` : ''}
+          ${adminEspecial.activo ? `
+          <button class="mini-btn" onclick="toggleEnEspecial('${id}')" title="Mostrar este producto dentro del menú especial"
+            style="${enEspecial ? `background:${colorEsp}1F; color:${colorEsp}; border-color:${colorEsp};` : ''}">
+            ${enEspecial ? '★ Especial' : '☆ Especial'}
+          </button>` : ''}
+          <button class="mini-btn" onclick="marcarTodaLaSemana('${id}')" title="Activar este producto los 5 días de la semana"
+            style="${enTodosLosDias ? 'background:var(--ok-bg); color:var(--ok); border-color:var(--ok-br);' : ''}">
             ${enTodosLosDias ? '✓ Toda la semana' : 'Toda la semana'}
           </button>
           <label class="toggle">
-            <input type="checkbox" ${checked?'checked':''} onchange="toggleAdminProducto('${p.articulo_id}', this.checked)" />
+            <input type="checkbox" ${checked?'checked':''} onchange="toggleAdminProducto('${id}', this.checked)" />
             <span class="toggle-slider"></span>
           </label>
         </div>
       </div>`;
-  }).join('') || '<p style="color:var(--ink-soft);font-size:0.85rem;padding:14px 0;">Sin resultados.</p>';
+  }).join('') || '<p style="color:var(--ink-soft);font-size:0.85rem;padding:14px 0;">Sin resultados.</p>');
 }
 
 function toggleAdminProducto(codigo, checked) {
   if (!adminMenu[adminFechaActual]) adminMenu[adminFechaActual] = new Set();
   if (checked) adminMenu[adminFechaActual].add(codigo); else adminMenu[adminFechaActual].delete(codigo);
   actualizarContadoresDias();
-  document.getElementById('admin-save-ok').style.display = 'none';
+  renderEspecialLista();
+  marcarSinGuardar();
 }
 
-// Alterna un producto en los 5 días de la semana: si ya estaba en los 5,
-// lo saca de los 5; si no, lo agrega a los 5.
+// Alterna un producto en los 5 días: si ya estaba en los 5 lo saca, si no lo agrega.
 function marcarTodaLaSemana(codigo) {
   const enTodos = adminFechas.length > 0 && adminFechas.every(f => (adminMenu[f]||new Set()).has(codigo));
   adminFechas.forEach(f => {
@@ -698,10 +864,10 @@ function marcarTodaLaSemana(codigo) {
   });
   actualizarContadoresDias();
   renderAdminLista();
-  document.getElementById('admin-save-ok').style.display = 'none';
+  renderEspecialLista();
+  marcarSinGuardar();
 }
 
-// Destilda todos los productos del día seleccionado actualmente
 function destildarTodoElDia() {
   if (!adminFechaActual) return;
   const cant = (adminMenu[adminFechaActual] || new Set()).size;
@@ -710,7 +876,8 @@ function destildarTodoElDia() {
   adminMenu[adminFechaActual] = new Set();
   actualizarContadoresDias();
   renderAdminLista();
-  document.getElementById('admin-save-ok').style.display = 'none';
+  renderEspecialLista();
+  marcarSinGuardar();
 }
 
 function actualizarContadoresDias() {
@@ -720,15 +887,193 @@ function actualizarContadoresDias() {
   });
 }
 
+// ════════════════════════════════════════════════
+// MENÚ ESPECIAL
+// ════════════════════════════════════════════════
+function toggleEspecialActivo(activo) {
+  adminEspecial.activo = activo;
+  renderEspecialCard();
+  renderAdminLista();
+  marcarSinGuardar();
+}
+
+function onEspecialCambio() {
+  adminEspecial.titulo = document.getElementById('esp-titulo').value;
+  renderEspecialMuestra();
+  marcarSinGuardar();
+}
+
+function elegirColorEspecial(color) {
+  adminEspecial.color = color;
+  renderEspecialCard();
+  renderAdminLista();
+  marcarSinGuardar();
+}
+
+function toggleEnEspecial(codigo) {
+  if (adminEspecial.codigos.has(codigo)) adminEspecial.codigos.delete(codigo);
+  else adminEspecial.codigos.add(codigo);
+  renderAdminLista();
+  renderEspecialLista();
+  marcarSinGuardar();
+}
+
+function renderEspecialCard() {
+  document.getElementById('esp-activo').checked = adminEspecial.activo;
+  document.getElementById('esp-config').style.display = adminEspecial.activo ? 'block' : 'none';
+  const tituloEl = document.getElementById('esp-titulo');
+  if (tituloEl.value !== adminEspecial.titulo) tituloEl.value = adminEspecial.titulo;
+
+  const esPreset = COLORES_ESPECIAL.includes(adminEspecial.color.toUpperCase()) || COLORES_ESPECIAL.includes(adminEspecial.color);
+  document.getElementById('esp-swatches').innerHTML =
+    COLORES_ESPECIAL.map(c => `<button class="swatch${c.toLowerCase() === adminEspecial.color.toLowerCase() ? ' sel' : ''}" style="background:${c};" title="${c}" onclick="elegirColorEspecial('${c}')"></button>`).join('') +
+    `<label class="swatch swatch-custom${esPreset ? '' : ' sel'}" title="Otro color" style="${esPreset ? '' : `background:${adminEspecial.color};`}">
+       <input type="color" value="${adminEspecial.color}" onchange="elegirColorEspecial(this.value)" />+
+     </label>`;
+
+  renderEspecialMuestra();
+  renderEspecialLista();
+}
+
+function renderEspecialMuestra() {
+  const t = adminEspecial.titulo.trim() || 'Título del menú especial';
+  document.getElementById('esp-muestra').innerHTML = labelGrupoHTML(t, adminEspecial.color);
+}
+
+function renderEspecialLista() {
+  const cont = document.getElementById('esp-lista');
+  if (!cont) return;
+  const codigos = Array.from(adminEspecial.codigos);
+  if (codigos.length === 0) {
+    cont.innerHTML = '<p style="font-size:0.85rem; color:var(--ink-soft); font-style:italic;">Todavía no hay productos en el menú especial.</p>';
+    return;
+  }
+  cont.innerHTML = codigos.map(id => {
+    const p = prodPorId(id);
+    const dias = adminFechas.filter(f => (adminMenu[f]||new Set()).has(id))
+      .map(f => DAY_SHORT[new Date(f + 'T00:00:00').getDay()]);
+    return `
+      <div class="toggle-row">
+        <div class="p-info">
+          <span>${escHtml(p ? p.articulo_desc : id)}</span>
+          <span class="p-cat" style="${dias.length ? '' : 'color:var(--err);'}">${dias.length ? 'Activo: ' + dias.join(', ') : 'Sin días activos — el cliente no lo va a ver'}</span>
+        </div>
+        <button class="mini-btn" onclick="toggleEnEspecial('${id}')">Quitar</button>
+      </div>`;
+  }).join('');
+}
+
+// ════════════════════════════════════════════════
+// PRODUCTOS TEMPORALES — no existen en la codificación. Viven solo en
+// el menú de esta semana (se guardan con "Guardar todo").
+// ════════════════════════════════════════════════
+function capitalizar(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+function llenarSelectCategorias() {
+  const sel = document.getElementById('crear-categoria');
+  const porGrupo = {};
+  Object.keys(CATEGORIA_A_GRUPO).forEach(cat => {
+    const g = CATEGORIA_A_GRUPO[cat];
+    (porGrupo[g] = porGrupo[g] || []).push(cat);
+  });
+  sel.innerHTML = '<option value="">Elegí una categoría…</option>' +
+    GRUPO_ORDEN.filter(g => porGrupo[g]).map(g =>
+      '<optgroup label="' + escHtml(g) + '">' +
+        porGrupo[g].sort().map(c => '<option value="' + escHtml(c) + '">' + escHtml(capitalizar(c)) + '</option>').join('') +
+      '</optgroup>'
+    ).join('');
+}
+
+function abrirCrearProducto() {
+  llenarSelectCategorias();
+  document.getElementById('crear-nombre').value = '';
+  document.getElementById('crear-categoria').value = '';
+  document.getElementById('crear-dia').checked = true;
+  document.getElementById('crear-error').style.display = 'none';
+  if (adminFechaActual) {
+    const d = new Date(adminFechaActual + 'T00:00:00');
+    document.getElementById('crear-dia-label').textContent = 'Activarlo solo el ' + DAY_NAMES[d.getDay()].toLowerCase() + ' ' + d.getDate();
+  }
+  const wrapEsp = document.getElementById('crear-especial-wrap');
+  wrapEsp.style.display = adminEspecial.activo ? 'flex' : 'none';
+  document.getElementById('crear-especial').checked = false;
+  document.getElementById('crear-especial-label').textContent =
+    'Agregarlo al menú especial' + (adminEspecial.titulo.trim() ? ' “' + adminEspecial.titulo.trim() + '”' : '');
+  document.getElementById('crear-overlay').style.display = 'flex';
+  setTimeout(() => document.getElementById('crear-nombre').focus(), 50);
+}
+function cerrarCrearProducto() {
+  document.getElementById('crear-overlay').style.display = 'none';
+}
+
+function crearProducto() {
+  const nombre = document.getElementById('crear-nombre').value.trim().replace(/\s+/g, ' ');
+  const categoria = document.getElementById('crear-categoria').value;
+  const errEl = document.getElementById('crear-error');
+  errEl.style.display = 'none';
+  if (!nombre) { errEl.textContent = 'Poné un nombre.'; errEl.style.display = 'block'; return; }
+  if (!categoria) { errEl.textContent = 'Elegí una categoría.'; errEl.style.display = 'block'; return; }
+
+  const yaExiste = adminCatalogo.find(p => (p.articulo_desc||'').trim().toLowerCase() === nombre.toLowerCase());
+  if (yaExiste && !confirm('Ya existe un producto llamado "' + yaExiste.articulo_desc + '". ¿Crear otro igual de todas formas?')) return;
+
+  const codigo = 'TMP-' + Math.random().toString(36).slice(2, 10).toUpperCase();
+  const prod = { articulo_id: codigo, articulo_desc: nombre, articulo_categoria: categoria, temporal: true };
+  adminTemporales[codigo] = prod;
+  adminCatalogo.unshift(prod);
+
+  const fechas = document.getElementById('crear-semana').checked ? adminFechas : (adminFechaActual ? [adminFechaActual] : []);
+  fechas.forEach(f => { (adminMenu[f] = adminMenu[f] || new Set()).add(codigo); });
+  if (adminEspecial.activo && document.getElementById('crear-especial').checked) adminEspecial.codigos.add(codigo);
+
+  cerrarCrearProducto();
+  document.getElementById('admin-search').value = '';
+  actualizarContadoresDias();
+  renderAdminLista();
+  renderEspecialLista();
+  marcarSinGuardar();
+}
+
+function eliminarTemporal(codigo) {
+  const p = adminTemporales[codigo];
+  if (!p || !confirm('¿Eliminar "' + p.articulo_desc + '"? Se saca de todos los días.')) return;
+  delete adminTemporales[codigo];
+  adminCatalogo = adminCatalogo.filter(x => x.articulo_id !== codigo);
+  adminFechas.forEach(f => adminMenu[f] && adminMenu[f].delete(codigo));
+  adminEspecial.codigos.delete(codigo);
+  actualizarContadoresDias();
+  renderAdminLista();
+  renderEspecialLista();
+  marcarSinGuardar();
+}
+
+// ════════════════════════════════════════════════
+// GUARDAR
+// ════════════════════════════════════════════════
 async function guardarMenuTodo() {
   const btn = document.getElementById('btn-guardar-menu');
   const okEl = document.getElementById('admin-save-ok');
+  const tituloEsp = adminEspecial.titulo.trim();
 
-  // Arma { fecha: [codigos...] } para los 5 días de la semana, tal como
-  // están en memoria en este momento (incluye todo lo tildado/destildado
-  // en cualquier día, no solo el que está a la vista).
+  if (adminEspecial.activo) {
+    if (!tituloEsp) { alert('Ponele un título al menú especial (o destildá “Esta semana hay un menú especial”).'); return; }
+    const visibles = Array.from(adminEspecial.codigos).filter(id => adminFechas.some(f => (adminMenu[f]||new Set()).has(id)));
+    if (visibles.length === 0 && !confirm('El menú especial no tiene productos activos en ningún día, así que el cliente no lo va a ver. ¿Guardar igual?')) return;
+  }
+  const tempSinDias = Object.keys(adminTemporales).filter(id => !adminFechas.some(f => (adminMenu[f]||new Set()).has(id)));
+  if (tempSinDias.length > 0 && !confirm('Hay ' + tempSinDias.length + ' producto(s) temporal(es) sin ningún día activo. Como no se guardan en ningún catálogo, se van a perder. ¿Seguir?')) return;
+
+  // { fecha: [{ codigo, nombre?, categoria?, seccion?, color? }, ...] }
   const menu = {};
-  adminFechas.forEach(f => { menu[f] = Array.from(adminMenu[f] || []); });
+  adminFechas.forEach(f => {
+    menu[f] = Array.from(adminMenu[f] || []).map(codigo => {
+      const item = { codigo };
+      const t = adminTemporales[codigo];
+      if (t) { item.nombre = t.articulo_desc; item.categoria = t.articulo_categoria; }
+      if (adminEspecial.activo && adminEspecial.codigos.has(codigo)) { item.seccion = tituloEsp; item.color = adminEspecial.color; }
+      return item;
+    });
+  });
 
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner"></span>Guardando…';
@@ -754,9 +1099,7 @@ async function guardarMenuTodo() {
 }
 
 // ════════════════════════════════════════════════
-// VISTA PREVIA — cómo va a ver el cliente el menú de cada día
-// Usa el estado actual en memoria (adminMenu), incluidos cambios sin
-// guardar todavía, para que el admin pueda chequear antes de confirmar.
+// VISTA PREVIA — réplica de lo que ve el cliente, con los cambios sin guardar
 // ════════════════════════════════════════════════
 let previewFechaActual = null;
 
@@ -788,31 +1131,27 @@ function renderPreviewLista() {
   document.getElementById('preview-day-title').textContent = DAY_NAMES[d.getDay()] + ' ' + d.toLocaleDateString('es-AR',{day:'numeric',month:'long'});
 
   const activos = adminMenu[previewFechaActual] || new Set();
-  const productos = adminCatalogo.filter(p => activos.has(p.articulo_id));
+  const productos = Array.from(activos).map(prodPorId).filter(Boolean);
 
   if (productos.length === 0) {
     document.getElementById('preview-lista').innerHTML = '<p style="color:var(--ink-soft);font-size:0.85rem;padding:10px 0;">Todavía no hay productos activos para este día.</p>';
     return;
   }
 
-  // Mismo agrupamiento y mismo orden que ve el cliente al cargar el pedido
-  // (grupoDeCategoria / GRUPO_ORDEN) — para que esto sea una réplica fiel,
-  // no una aproximación con las categorías crudas de la base.
-  const porGrupo = {};
-  productos.forEach(p => {
-    const g = grupoDeCategoria(p.articulo_categoria);
-    if (!porGrupo[g]) porGrupo[g] = [];
-    porGrupo[g].push(p);
-  });
+  const tituloEsp = adminEspecial.titulo.trim() || 'Menú especial';
+  const secciones = armarSecciones(
+    productos,
+    p => p.articulo_categoria,
+    p => (adminEspecial.activo && adminEspecial.codigos.has(p.articulo_id)) ? tituloEsp : null,
+    () => adminEspecial.color
+  );
 
-  const gruposConItems = GRUPO_ORDEN.filter(g => porGrupo[g] && porGrupo[g].length > 0);
-
-  document.getElementById('preview-lista').innerHTML = gruposConItems.map(g => `
-    <div style="margin-bottom:16px; padding:14px 16px 4px; border-left:4px solid ${GRUPO_COLORES[g]||'#1F1F1F'}; background:${GRUPO_COLORES[g]||'#1F1F1F'}0D; border-radius:0 8px 8px 0;">
-      ${labelGrupoHTML(g)}
-      ${porGrupo[g].map(p => `
+  document.getElementById('preview-lista').innerHTML = secciones.map(s => `
+    <div style="${estiloSeccion(s.color, s.especial)}">
+      ${labelGrupoHTML(s.titulo, s.color)}
+      ${s.items.map(p => `
         <div style="padding:8px 0; border-bottom:1px solid var(--cream-dk); font-size:0.88rem;">
-          ${p.articulo_desc}
+          ${escHtml(limpiarNombre(p.articulo_desc))}
         </div>`).join('')}
     </div>`).join('');
 }
