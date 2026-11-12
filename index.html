@@ -141,6 +141,19 @@
       <p id="cliente-cerrado-texto">El próximo período de carga abre el miércoles a las 9hs.</p>
     </div>
 
+    <!-- CLIENTE: pedido ya confirmado (solo lectura) -->
+    <div id="cliente-confirmado" style="display:none">
+      <div class="card">
+        <div class="card-label">Pedido confirmado —</div>
+        <h2 id="confirmado-semana-title" style="margin-bottom:8px;">—</h2>
+        <p style="font-size:0.88rem; color:var(--ink-soft); line-height:1.6; margin-bottom:20px;">
+          ✓ Tu pedido de esta semana ya fue enviado y no se puede modificar.
+          Si necesitás hacer un cambio, escribinos a <strong>mariano@somosfeed.com.ar</strong>.
+        </p>
+        <div id="confirmado-tabla" style="overflow-x:auto;"></div>
+      </div>
+    </div>
+
     <!-- CLIENTE: pedido -->
     <div id="cliente-pedido" style="display:none">
       <div class="card">
@@ -209,7 +222,7 @@
   <div id="success-screen">
     <div class="success-icon">✓</div>
     <h2 style="font-family:'Lato',sans-serif;font-weight:900;font-size:1.6rem;margin-bottom:10px;">¡Pedido confirmado!</h2>
-    <p style="font-size:0.9rem;color:var(--ink-soft);line-height:1.6;margin-bottom:26px;">El pedido fue registrado y el equipo de planificación recibió la notificación.</p>
+    <p style="font-size:0.9rem;color:var(--ink-soft);line-height:1.6;margin-bottom:26px;">El pedido fue registrado y el equipo de planificación recibió la notificación. Ya no se puede modificar.</p>
     <button class="btn-back" onclick="location.reload()">Volver al inicio</button>
   </div>
 
@@ -261,7 +274,7 @@
 // ════════════════════════════════════════════════
 // CONFIGURACIÓN — reemplazar por la URL del deployment de Pfizer
 // ════════════════════════════════════════════════
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzG_WTteo9MXdDf1F0CXZGjroHTyuTMhQdzaGs-hfWcJgzOv799M5JKUyjzgPsX1E89/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwd9vhl2UirwAL0JHBe0kaRuK7d1GH7SOTW0ExMkq9RTSau13P7B1h0Wgtktbk9glW7/exec';
 
 const DAY_NAMES = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 const DAY_SHORT = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
@@ -477,6 +490,14 @@ async function irACliente() {
     }
 
     document.getElementById('cliente-cerrado').style.display = 'none';
+
+    // Si ya hay un pedido confirmado para esta semana, se muestra en modo
+    // solo lectura: no se puede volver a editar.
+    if (json.pedido && json.pedido.dias && json.pedido.dias.length > 0) {
+      mostrarPedidoConfirmado(json);
+      return;
+    }
+
     document.getElementById('cliente-pedido').style.display = 'block';
     document.getElementById('cliente-semana-title').textContent = json.semana || '—';
 
@@ -689,6 +710,60 @@ async function submitPedidoCliente() {
     btn.disabled = false; btn.textContent = 'Confirmar pedido';
   }
 }
+// Vista de solo lectura del pedido ya confirmado (misma tabla que el resumen)
+function mostrarPedidoConfirmado(json) {
+  document.getElementById('cliente-pedido').style.display = 'none';
+  document.getElementById('cliente-confirmado').style.display = 'block';
+  document.getElementById('confirmado-semana-title').textContent = json.semana || '—';
+
+  const fechas = (json.dias || []).map(d => d.fecha);
+  const cant = {};            // codigo|fecha -> cantidad
+  const nombres = {};         // codigo -> nombre
+  const orden = [];
+  json.pedido.dias.forEach(dia => {
+    if (!fechas.includes(dia.fecha)) fechas.push(dia.fecha);
+    dia.productos.forEach(p => {
+      if (!(p.codigo in nombres)) { nombres[p.codigo] = p.nombre; orden.push(p.codigo); }
+      cant[p.codigo + '|' + dia.fecha] = p.cantidad;
+    });
+  });
+  fechas.sort();
+
+  const totalPorDia = {};
+  fechas.forEach(f => { totalPorDia[f] = 0; });
+  const headerCols = fechas.map(f => {
+    const d = new Date(f + 'T00:00:00');
+    return `<th style="padding:10px 12px;text-align:center;color:#fff;white-space:nowrap;">${DAY_SHORT[d.getDay()].toUpperCase()} ${d.getDate()}</th>`;
+  }).join('');
+  const filas = orden.map((codigo, idx) => {
+    let total = 0;
+    const celdas = fechas.map(f => {
+      const c = cant[codigo + '|' + f] || 0;
+      total += c; totalPorDia[f] += c;
+      return `<td style="padding:10px 12px;text-align:center;">${c}</td>`;
+    }).join('');
+    return `<tr style="background:${idx % 2 === 0 ? 'var(--cream)' : '#fff'}">
+      <td style="padding:10px 12px;">${escHtml(limpiarNombre(nombres[codigo]))}</td>${celdas}
+      <td style="padding:10px 12px;text-align:center;font-weight:bold;">${total}</td></tr>`;
+  }).join('');
+  const totalGeneral = Object.values(totalPorDia).reduce((s, v) => s + v, 0);
+  const celdasTotal = fechas.map(f => `<td style="padding:10px 12px;text-align:center;color:#fff;font-weight:bold;">${totalPorDia[f]}</td>`).join('');
+
+  document.getElementById('confirmado-tabla').innerHTML = `
+    <table cellpadding="0" cellspacing="0" style="border-collapse:collapse;width:100%;font-size:0.85rem;">
+      <thead><tr style="background:var(--ink);">
+        <th style="padding:10px 12px;text-align:left;color:#fff;">PRODUCTO</th>${headerCols}
+        <th style="padding:10px 12px;text-align:center;color:#fff;">TOTAL</th>
+      </tr></thead>
+      <tbody>${filas}
+        <tr style="background:var(--ok);">
+          <td style="padding:10px 12px;color:#fff;font-weight:bold;">TOTAL POR DÍA</td>${celdasTotal}
+          <td style="padding:10px 12px;text-align:center;color:#fff;font-weight:bold;">${totalGeneral}</td>
+        </tr>
+      </tbody>
+    </table>`;
+}
+
 function showClienteError(msg){ const el=document.getElementById('cliente-error-msg'); el.textContent=msg; el.style.display='block'; }
 function hideClienteError(){ document.getElementById('cliente-error-msg').style.display='none'; }
 
