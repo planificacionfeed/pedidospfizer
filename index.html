@@ -275,7 +275,7 @@
 // ════════════════════════════════════════════════
 // CONFIGURACIÓN — reemplazar por la URL del deployment de Pfizer
 // ════════════════════════════════════════════════
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyJuQWq3TgkBxx_HmvfT4sUh6TArVonKANqjJQWIVvr8msOpOeHwbmMQpqsx5v2q1Ak/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwnfvGGiURCgJHhr7TJf6Sp9FUy1ZbqcEvu_PXgoKRqrjvhCWvaOzG3532QXcRJuoqM/exec';
 
 const DAY_NAMES = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 const DAY_SHORT = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
@@ -626,74 +626,116 @@ function refreshClienteDot(fecha) {
   if (dot) dot.classList.toggle('visible', cambio);
 }
 
-// Resumen en vivo, con el mismo formato de tabla que usa el mail de
-// confirmación (producto x día + total), pero sin las flechas de variación
-// respecto del pedido anterior — acá solo importa lo que se está cargando.
-function updateClienteSummary() {
-  const grid = document.getElementById('cliente-summary-grid');
-  if (!grid) return;
+// ════════════════════════════════════════════════
+// RESUMEN + DETALLE DE CAMBIOS (cliente)
+// ════════════════════════════════════════════════
 
-  // Productos con al menos una cantidad > 0 en algún día, en orden de
-  // aparición (evita listar todo el catálogo, solo lo que se está pidiendo)
-  const codigosVistos = new Set();
-  const productosOrden = [];
-  clienteDias.forEach(dia => {
-    dia.productos.forEach(p => {
-      if (!codigosVistos.has(p.codigo) && (clienteData[dia.fecha][p.codigo]||0) > 0) {
-        codigosVistos.add(p.codigo);
-        productosOrden.push(p);
-      }
-    });
-  });
+// Celda de cantidad: si cambió respecto de "antes", se resalta y se
+// muestra el valor anterior tachado.
+function celdaCantidad(antes, ahora) {
+  if (antes === ahora) return `<td style="padding:10px 12px;text-align:center;">${ahora}</td>`;
+  const color = ahora > antes ? 'var(--ok)' : 'var(--err)';
+  return `<td style="padding:10px 12px;text-align:center;background:#FDF6E3;box-shadow:inset 0 0 0 1.5px var(--warn-br);">
+    <span style="text-decoration:line-through;color:#999;font-size:0.78rem;margin-right:4px;">${antes}</span><strong style="color:${color};">${ahora}</strong></td>`;
+}
 
-  if (productosOrden.length === 0) {
-    grid.innerHTML = '<p style="color:var(--ink-soft);font-size:0.85rem;">Todavía no cargaste ningún producto.</p>';
-    return;
-  }
-
-  const headerCols = clienteDias.map(dia => {
-    const d = new Date(dia.fecha + 'T00:00:00');
+// Tabla PRODUCTO × DÍA + TOTAL. filas: [{nombre, codigo}], getAntes/getAhora(codigo, fecha)
+function tablaResumenHTML(fechas, filas, getAntes, getAhora) {
+  const totalPorDia = {};
+  fechas.forEach(f => { totalPorDia[f] = 0; });
+  const headerCols = fechas.map(f => {
+    const d = new Date(f + 'T00:00:00');
     return `<th style="padding:10px 12px;text-align:center;color:#fff;white-space:nowrap;">${DAY_SHORT[d.getDay()].toUpperCase()} ${d.getDate()}</th>`;
   }).join('');
-
-  const totalPorDia = {};
-  clienteDias.forEach(dia => { totalPorDia[dia.fecha] = 0; });
-
-  const filas = productosOrden.map((p, idx) => {
-    let totalProducto = 0;
-    const celdas = clienteDias.map(dia => {
-      const cant = clienteData[dia.fecha][p.codigo] || 0;
-      totalProducto += cant;
-      totalPorDia[dia.fecha] += cant;
-      return `<td style="padding:10px 12px;text-align:center;">${cant}</td>`;
+  const filasHTML = filas.map((p, idx) => {
+    let totalAntes = 0, total = 0;
+    const celdas = fechas.map(f => {
+      const a = getAntes(p.codigo, f), c = getAhora(p.codigo, f);
+      totalAntes += a; total += c; totalPorDia[f] += c;
+      return celdaCantidad(a, c);
     }).join('');
+    const quitado = total === 0;
     return `<tr style="background:${idx % 2 === 0 ? 'var(--cream)' : '#fff'}">
-      <td style="padding:10px 12px;">${escHtml(limpiarNombre(p.nombre))}</td>${celdas}
-      <td style="padding:10px 12px;text-align:center;font-weight:bold;">${totalProducto}</td>
+      <td style="padding:10px 12px;${quitado ? 'text-decoration:line-through;color:#999;' : ''}">${escHtml(limpiarNombre(p.nombre))}</td>${celdas}
+      <td style="padding:10px 12px;text-align:center;font-weight:bold;">${total}${totalAntes !== total ? ` <span style="font-weight:400;color:#999;font-size:0.75rem;">(antes ${totalAntes})</span>` : ''}</td>
     </tr>`;
   }).join('');
-
-  const totalGeneral = Object.values(totalPorDia).reduce((s,v) => s+v, 0);
-  const celdasTotal = clienteDias.map(dia => `<td style="padding:10px 12px;text-align:center;color:#fff;font-weight:bold;">${totalPorDia[dia.fecha]}</td>`).join('');
-
-  grid.innerHTML = `
+  const totalGeneral = Object.values(totalPorDia).reduce((s, v) => s + v, 0);
+  const celdasTotal = fechas.map(f => `<td style="padding:10px 12px;text-align:center;color:#fff;font-weight:bold;">${totalPorDia[f]}</td>`).join('');
+  return `
     <table cellpadding="0" cellspacing="0" style="border-collapse:collapse;width:100%;font-size:0.85rem;">
-      <thead>
-        <tr style="background:var(--ink);">
-          <th style="padding:10px 12px;text-align:left;color:#fff;">PRODUCTO</th>
-          ${headerCols}
-          <th style="padding:10px 12px;text-align:center;color:#fff;">TOTAL</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${filas}
+      <thead><tr style="background:var(--ink);">
+        <th style="padding:10px 12px;text-align:left;color:#fff;">PRODUCTO</th>${headerCols}
+        <th style="padding:10px 12px;text-align:center;color:#fff;">TOTAL</th>
+      </tr></thead>
+      <tbody>${filasHTML}
         <tr style="background:var(--ok);">
-          <td style="padding:10px 12px;color:#fff;font-weight:bold;">TOTAL POR DÍA</td>
-          ${celdasTotal}
+          <td style="padding:10px 12px;color:#fff;font-weight:bold;">TOTAL POR DÍA</td>${celdasTotal}
           <td style="padding:10px 12px;text-align:center;color:#fff;font-weight:bold;">${totalGeneral}</td>
         </tr>
       </tbody>
     </table>`;
+}
+
+// Lista de cambios: [{fecha, nombre, antes, despues}]
+function tablaCambiosHTML(cambios, titulo) {
+  if (!cambios || cambios.length === 0) return '';
+  const filas = cambios.map(c => {
+    const d = new Date(c.fecha + 'T00:00:00');
+    const dif = c.despues - c.antes;
+    const etiqueta = c.antes === 0 ? 'Agregado' : (c.despues === 0 ? 'Quitado' : (dif > 0 ? 'Aumentó' : 'Bajó'));
+    const color = dif > 0 ? 'var(--ok)' : 'var(--err)';
+    return `<tr>
+      <td style="padding:8px 10px;border-bottom:1px solid var(--cream-dk);">${escHtml(limpiarNombre(c.nombre))}</td>
+      <td style="padding:8px 10px;border-bottom:1px solid var(--cream-dk);white-space:nowrap;">${DAY_SHORT[d.getDay()]} ${d.getDate()}</td>
+      <td style="padding:8px 10px;border-bottom:1px solid var(--cream-dk);text-align:center;white-space:nowrap;"><span style="color:#999;">${c.antes}</span> → <strong>${c.despues}</strong></td>
+      <td style="padding:8px 10px;border-bottom:1px solid var(--cream-dk);text-align:right;color:${color};font-weight:700;white-space:nowrap;">${dif > 0 ? '+' : ''}${dif} · ${etiqueta}</td>
+    </tr>`;
+  }).join('');
+  return `
+    <div style="margin-top:20px; background:var(--warn-bg); border:1.5px solid var(--warn-br); border-radius:8px; padding:14px 16px; overflow-x:auto;">
+      <div style="font-weight:900; font-size:0.92rem; margin-bottom:8px;">✏️ ${escHtml(titulo)} (${cambios.length})</div>
+      <table style="border-collapse:collapse; width:100%; font-size:0.84rem;"><tbody>${filas}</tbody></table>
+    </div>`;
+}
+
+// Resumen en vivo mientras se carga / modifica el pedido.
+// Si se está modificando un pedido confirmado, resalta lo que cambió
+// respecto de lo confirmado y lista los cambios que se van a guardar.
+function updateClienteSummary() {
+  const grid = document.getElementById('cliente-summary-grid');
+  if (!grid) return;
+
+  const vistos = new Set(), filas = [];
+  clienteDias.forEach(dia => {
+    dia.productos.forEach(p => {
+      const actual = clienteData[dia.fecha][p.codigo] || 0;
+      const orig = (clienteOriginal[dia.fecha] || {})[p.codigo] || 0;
+      if (!vistos.has(p.codigo) && (actual > 0 || orig > 0)) { vistos.add(p.codigo); filas.push(p); }
+    });
+  });
+
+  if (filas.length === 0) {
+    grid.innerHTML = '<p style="color:var(--ink-soft);font-size:0.85rem;">Todavía no cargaste ningún producto.</p>';
+    return;
+  }
+
+  const fechas = clienteDias.map(d => d.fecha);
+  const getAhora = (c, f) => (clienteData[f] || {})[c] || 0;
+  const getAntes = editandoPedido ? (c, f) => (clienteOriginal[f] || {})[c] || 0 : getAhora;
+
+  let cambios = [];
+  if (editandoPedido) {
+    clienteDias.forEach(dia => dia.productos.forEach(p => {
+      const a = getAntes(p.codigo, dia.fecha), d = getAhora(p.codigo, dia.fecha);
+      if (a !== d) cambios.push({ fecha: dia.fecha, nombre: p.nombre, antes: a, despues: d });
+    }));
+  }
+
+  grid.innerHTML = tablaResumenHTML(fechas, filas, getAntes, getAhora) +
+    (editandoPedido
+      ? (cambios.length ? tablaCambiosHTML(cambios, 'Cambios que vas a guardar') : '<p style="margin-top:14px;color:var(--ink-soft);font-size:0.85rem;">Todavía no hiciste cambios al pedido confirmado.</p>')
+      : '');
 }
 
 async function submitPedidoCliente() {
@@ -734,7 +776,8 @@ async function submitPedidoCliente() {
     btn.disabled = false; btn.textContent = editandoPedido ? 'Guardar cambios' : 'Confirmar pedido';
   }
 }
-// Vista de solo lectura del pedido ya confirmado (misma tabla que el resumen)
+// Vista de solo lectura del pedido ya confirmado. Si fue modificado,
+// resalta lo que cambió respecto del pedido original y lo detalla abajo.
 function mostrarPedidoConfirmado(json) {
   document.getElementById('cliente-pedido').style.display = 'none';
   document.getElementById('cliente-confirmado').style.display = 'block';
@@ -745,51 +788,29 @@ function mostrarPedidoConfirmado(json) {
     : '✓ Tu pedido de esta semana ya fue enviado y no se puede modificar. Si necesitás hacer un cambio, escribinos a <strong>mariano@somosfeed.com.ar</strong>.';
 
   const fechas = (json.dias || []).map(d => d.fecha);
-  const cant = {};            // codigo|fecha -> cantidad
-  const nombres = {};         // codigo -> nombre
-  const orden = [];
+  const actual = {}, nombres = {}, orden = [];
+  const agregar = (codigo, nombre) => { if (!(codigo in nombres)) { nombres[codigo] = nombre; orden.push(codigo); } };
   json.pedido.dias.forEach(dia => {
     if (!fechas.includes(dia.fecha)) fechas.push(dia.fecha);
-    dia.productos.forEach(p => {
-      if (!(p.codigo in nombres)) { nombres[p.codigo] = p.nombre; orden.push(p.codigo); }
-      cant[p.codigo + '|' + dia.fecha] = p.cantidad;
-    });
+    dia.productos.forEach(p => { agregar(p.codigo, p.nombre); actual[p.codigo + '|' + dia.fecha] = p.cantidad; });
+  });
+
+  // Valores originales: por defecto iguales a los actuales, salvo lo que cambió
+  const cambios = json.cambios || [];
+  const original = Object.assign({}, actual);
+  cambios.forEach(c => {
+    agregar(c.codigo, c.nombre);   // incluye productos que se quitaron
+    if (!fechas.includes(c.fecha)) fechas.push(c.fecha);
+    original[c.codigo + '|' + c.fecha] = c.antes;
   });
   fechas.sort();
 
-  const totalPorDia = {};
-  fechas.forEach(f => { totalPorDia[f] = 0; });
-  const headerCols = fechas.map(f => {
-    const d = new Date(f + 'T00:00:00');
-    return `<th style="padding:10px 12px;text-align:center;color:#fff;white-space:nowrap;">${DAY_SHORT[d.getDay()].toUpperCase()} ${d.getDate()}</th>`;
-  }).join('');
-  const filas = orden.map((codigo, idx) => {
-    let total = 0;
-    const celdas = fechas.map(f => {
-      const c = cant[codigo + '|' + f] || 0;
-      total += c; totalPorDia[f] += c;
-      return `<td style="padding:10px 12px;text-align:center;">${c}</td>`;
-    }).join('');
-    return `<tr style="background:${idx % 2 === 0 ? 'var(--cream)' : '#fff'}">
-      <td style="padding:10px 12px;">${escHtml(limpiarNombre(nombres[codigo]))}</td>${celdas}
-      <td style="padding:10px 12px;text-align:center;font-weight:bold;">${total}</td></tr>`;
-  }).join('');
-  const totalGeneral = Object.values(totalPorDia).reduce((s, v) => s + v, 0);
-  const celdasTotal = fechas.map(f => `<td style="padding:10px 12px;text-align:center;color:#fff;font-weight:bold;">${totalPorDia[f]}</td>`).join('');
-
-  document.getElementById('confirmado-tabla').innerHTML = `
-    <table cellpadding="0" cellspacing="0" style="border-collapse:collapse;width:100%;font-size:0.85rem;">
-      <thead><tr style="background:var(--ink);">
-        <th style="padding:10px 12px;text-align:left;color:#fff;">PRODUCTO</th>${headerCols}
-        <th style="padding:10px 12px;text-align:center;color:#fff;">TOTAL</th>
-      </tr></thead>
-      <tbody>${filas}
-        <tr style="background:var(--ok);">
-          <td style="padding:10px 12px;color:#fff;font-weight:bold;">TOTAL POR DÍA</td>${celdasTotal}
-          <td style="padding:10px 12px;text-align:center;color:#fff;font-weight:bold;">${totalGeneral}</td>
-        </tr>
-      </tbody>
-    </table>`;
+  const filas = orden.map(codigo => ({ codigo, nombre: nombres[codigo] }));
+  document.getElementById('confirmado-tabla').innerHTML =
+    tablaResumenHTML(fechas, filas,
+      (c, f) => original[c + '|' + f] || 0,
+      (c, f) => actual[c + '|' + f] || 0) +
+    tablaCambiosHTML(cambios, 'Cambios respecto de tu pedido original');
 }
 
 function showClienteError(msg){ const el=document.getElementById('cliente-error-msg'); el.textContent=msg; el.style.display='block'; }
