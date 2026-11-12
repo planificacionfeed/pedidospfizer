@@ -146,11 +146,11 @@
       <div class="card">
         <div class="card-label">Pedido confirmado —</div>
         <h2 id="confirmado-semana-title" style="margin-bottom:8px;">—</h2>
-        <p style="font-size:0.88rem; color:var(--ink-soft); line-height:1.6; margin-bottom:20px;">
-          ✓ Tu pedido de esta semana ya fue enviado y no se puede modificar.
-          Si necesitás hacer un cambio, escribinos a <strong>mariano@somosfeed.com.ar</strong>.
-        </p>
+        <p id="confirmado-texto" style="font-size:0.88rem; color:var(--ink-soft); line-height:1.6; margin-bottom:20px;"></p>
         <div id="confirmado-tabla" style="overflow-x:auto;"></div>
+        <div id="confirmado-acciones" style="display:none; justify-content:flex-end; margin-top:20px;">
+          <button class="btn-confirm" onclick="abrirEditorPedido(ultimoPedidoJson)">✏️ Modificar cantidades</button>
+        </div>
       </div>
     </div>
 
@@ -167,6 +167,7 @@
         <h2 style="margin-bottom:18px">Lo que llevás cargado</h2>
         <div id="cliente-summary-grid" style="overflow-x:auto; margin-bottom:20px;"></div>
         <div style="display:flex; justify-content:flex-end; gap:12px;">
+          <button class="btn-back" id="btn-cancelar-edicion" style="display:none;" onclick="mostrarPedidoConfirmado(ultimoPedidoJson)">Cancelar</button>
           <button class="btn-confirm" id="btn-submit-cliente" onclick="submitPedidoCliente()">Confirmar pedido</button>
         </div>
         <div class="err-strip" id="cliente-error-msg"></div>
@@ -221,8 +222,8 @@
 
   <div id="success-screen">
     <div class="success-icon">✓</div>
-    <h2 style="font-family:'Lato',sans-serif;font-weight:900;font-size:1.6rem;margin-bottom:10px;">¡Pedido confirmado!</h2>
-    <p style="font-size:0.9rem;color:var(--ink-soft);line-height:1.6;margin-bottom:26px;">El pedido fue registrado y el equipo de planificación recibió la notificación. Ya no se puede modificar.</p>
+    <h2 id="success-titulo" style="font-family:'Lato',sans-serif;font-weight:900;font-size:1.6rem;margin-bottom:10px;">¡Pedido confirmado!</h2>
+    <p style="font-size:0.9rem;color:var(--ink-soft);line-height:1.6;margin-bottom:26px;"><span id="success-texto">El pedido fue registrado y el equipo de planificación recibió la notificación.</span></p>
     <button class="btn-back" onclick="location.reload()">Volver al inicio</button>
   </div>
 
@@ -274,7 +275,7 @@
 // ════════════════════════════════════════════════
 // CONFIGURACIÓN — reemplazar por la URL del deployment de Pfizer
 // ════════════════════════════════════════════════
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwd9vhl2UirwAL0JHBe0kaRuK7d1GH7SOTW0ExMkq9RTSau13P7B1h0Wgtktbk9glW7/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyJuQWq3TgkBxx_HmvfT4sUh6TArVonKANqjJQWIVvr8msOpOeHwbmMQpqsx5v2q1Ak/exec';
 
 const DAY_NAMES = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 const DAY_SHORT = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
@@ -491,15 +492,34 @@ async function irACliente() {
 
     document.getElementById('cliente-cerrado').style.display = 'none';
 
-    // Si ya hay un pedido confirmado para esta semana, se muestra en modo
-    // solo lectura: no se puede volver a editar.
+    ultimoPedidoJson = json;
+
+    // Si ya hay un pedido confirmado para esta semana, primero se muestra
+    // el resumen. Si la edición está habilitada, tiene un botón para modificar.
     if (json.pedido && json.pedido.dias && json.pedido.dias.length > 0) {
       mostrarPedidoConfirmado(json);
       return;
     }
+    abrirEditorPedido(json);
+  } catch (e) {
+    document.getElementById('cliente-pedido').innerHTML = '<p style="color:var(--err)">Error al cargar el pedido.</p>';
+  }
+}
 
+let ultimoPedidoJson = null;
+let editandoPedido = false;   // true = modificando un pedido ya confirmado
+
+// Abre la carga de cantidades. Si ya había pedido, viene precargado con
+// lo confirmado y solo se envía lo que cambie (código + fecha).
+function abrirEditorPedido(json) {
+  try {
+    editandoPedido = !!(json.pedido && json.pedido.dias && json.pedido.dias.length > 0);
+    document.getElementById('cliente-confirmado').style.display = 'none';
     document.getElementById('cliente-pedido').style.display = 'block';
     document.getElementById('cliente-semana-title').textContent = json.semana || '—';
+    document.getElementById('btn-cancelar-edicion').style.display = editandoPedido ? 'inline-block' : 'none';
+    document.getElementById('btn-submit-cliente').textContent = editandoPedido ? 'Guardar cambios' : 'Confirmar pedido';
+    hideClienteError();
 
     clienteDias = json.dias || [];
     clienteData = {}; clienteOriginal = {};
@@ -699,15 +719,19 @@ async function submitPedidoCliente() {
     });
     const json = await res.json();
     if (json.status === 'ok') {
+      if (editandoPedido) {
+        document.getElementById('success-titulo').textContent = '¡Cambios guardados!';
+        document.getElementById('success-texto').textContent = 'El pedido se actualizó y el equipo de planificación recibió la notificación con el pedido completo.';
+      }
       document.getElementById('app-container').style.display = 'none';
       document.getElementById('success-screen').style.display = 'block';
     } else {
       showClienteError(json.message || 'Hubo un error al enviar el pedido.');
-      btn.disabled = false; btn.textContent = 'Confirmar pedido';
+      btn.disabled = false; btn.textContent = editandoPedido ? 'Guardar cambios' : 'Confirmar pedido';
     }
   } catch (e) {
     showClienteError('Hubo un error al enviar el pedido. Intentá nuevamente.');
-    btn.disabled = false; btn.textContent = 'Confirmar pedido';
+    btn.disabled = false; btn.textContent = editandoPedido ? 'Guardar cambios' : 'Confirmar pedido';
   }
 }
 // Vista de solo lectura del pedido ya confirmado (misma tabla que el resumen)
@@ -715,6 +739,10 @@ function mostrarPedidoConfirmado(json) {
   document.getElementById('cliente-pedido').style.display = 'none';
   document.getElementById('cliente-confirmado').style.display = 'block';
   document.getElementById('confirmado-semana-title').textContent = json.semana || '—';
+  document.getElementById('confirmado-acciones').style.display = json.editable ? 'flex' : 'none';
+  document.getElementById('confirmado-texto').innerHTML = json.editable
+    ? '✓ Tu pedido de esta semana ya fue enviado. Si necesitás, podés modificar las cantidades hasta que cierre el período.'
+    : '✓ Tu pedido de esta semana ya fue enviado y no se puede modificar. Si necesitás hacer un cambio, escribinos a <strong>mariano@somosfeed.com.ar</strong>.';
 
   const fechas = (json.dias || []).map(d => d.fecha);
   const cant = {};            // codigo|fecha -> cantidad
