@@ -268,7 +268,7 @@
     </div>
   </div>
 
-  <footer>© FEED — Happiness is Homemade · Consultas: mariano@somosfeed.com.ar</footer>
+  <footer>© FEED — Happiness is Homemade · Consultas: atclientes@somosfeed.com.ar</footer>
 </div>
 
 <script>
@@ -785,7 +785,7 @@ function mostrarPedidoConfirmado(json) {
   document.getElementById('confirmado-acciones').style.display = json.editable ? 'flex' : 'none';
   document.getElementById('confirmado-texto').innerHTML = json.editable
     ? '✓ Tu pedido de esta semana ya fue enviado. Si necesitás, podés modificar las cantidades hasta que cierre el período.'
-    : '✓ Tu pedido de esta semana ya fue enviado y no se puede modificar. Si necesitás hacer un cambio, escribinos a <strong>mariano@somosfeed.com.ar</strong>.';
+    : '✓ Tu pedido de esta semana ya fue enviado y no se puede modificar. Si necesitás hacer un cambio, escribinos a <strong>atclientes@somosfeed.com.ar</strong>.';
 
   const fechas = (json.dias || []).map(d => d.fecha);
   const actual = {}, nombres = {}, orden = [];
